@@ -1,32 +1,23 @@
-# Prerequisites
-*.d
+# Vim
+*.swp
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# MSVC 
+.vs/
+/out*
+CMakeSettings.json
 
-# Precompiled Headers
-*.gch
-*.pch
+# CLion
+.idea/
+build/
+cmake-build*/
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+# Windows build
+win/
 
-# Fortran module files
-*.mod
-*.smod
+# Documentation source files
+doc/
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+# Misc
+.DS_Store
+_test.cpp
+out.tmp
