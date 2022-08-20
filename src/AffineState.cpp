@@ -1,109 +1,101 @@
-#include "AffineState.h"
-#include <Eigen/Dense>
+#include <cstdlib>
 #include <iostream>
+#include <map>
 #include <random>
 #include <vector>
-#include <map>
+
+#include <Eigen/Dense>
+
+#include "AffineState.h"
+#include "random.h"
 
 // Initialization:
-AffineState::AffineState(int m) {
-    n = m;
-    phase = 0;
-    Q.setZero(0, 0);
-    A.setZero(m, 0);
-    b.setZero(m);
-    r = 0;
-    return;
+AffineState::AffineState(int n) : n_{n}, phase_{0}, r_{0} {
+    Q_.setZero(0, 0);
+    A_.setZero(n, 0);
+    b_.setZero(n);
 }
 
 // Subroutines:
 void AffineState::ReduceGramRowCol(int c) { // TODO: Optimize
-    Q(c, c) = (4 + Q(c, c) % 4) % 4;
-    for (int i = 0; i < Q.cols(); i++) {
+    Q_(c, c) = (4 + Q_(c, c) % 4) % 4;
+    for (int i = 0; i < Q_.cols(); i++) {
         if (i != c) {
-            Q(c, i) = (2 + Q(c, i) % 2) % 2;
-            Q(i, c) = (2 + Q(i, c) % 2) % 2;
+            Q_(c, i) = (2 + Q_(c, i) % 2) % 2;
+            Q_(i, c) = (2 + Q_(i, c) % 2) % 2;
         }
     }
-    return;
 }
 
 void AffineState::ReindexSubtColumn(int k, int c) {
-    if (c == k) {
-        return;
-    } else {
-        for (int j = 0; j < n; j++) {
-            if (A(j, c) != 0) {
-                A(j, k) = (A(j, k) + 1) % 2;
+    if (c != k) {
+        for (int j = 0; j < n_; j++) {
+            if (A_(j, c) != 0) {
+                A_(j, k) = (A_(j, k) + 1) % 2;
             }
         }
-        for (int h = 0; h < Q.cols(); h++) {
-            if (Q(h, c) != 0) {
-                Q(h, k) -= Q(h, c);
+        for (int h = 0; h < Q_.cols(); h++) {
+            if (Q_(h, c) != 0) {
+                Q_(h, k) -= Q_(h, c);
             }
-            if (Q(c, h) != 0) {
-                Q(k, h) -= Q(c, h);
+            if (Q_(c, h) != 0) {
+                Q_(k, h) -= Q_(c, h);
             }
         }
         ReduceGramRowCol(k);
         // ReduceQ();
-        return;
     }
 }
 
 void AffineState::ReindexSwapColumns(int k, int c) {
-    if (c == k) {
-        return;
-    } else {
+    if (c != k) {
         int swaptmp;
-        for (int j = 0; j < n; j++) {
-            if (A(j, c) != 0 || A(j, k) != 0) { // TODO: Optimize swap
-                swaptmp = A(j, c);
-                A(j, c) = A(j, k);
-                A(j, k) = swaptmp;
+        for (int j = 0; j < n_; j++) {
+            if (A_(j, c) != 0 || A_(j, k) != 0) { // TODO: Optimize swap
+                swaptmp = A_(j, c);
+                A_(j, c) = A_(j, k);
+                A_(j, k) = swaptmp;
             }
         }
-        for (int j = 0; j < Q.cols(); j++) {
-            if (Q(j, c) != 0 || Q(j, k) != 0) { // TODO: Optimize swap
-                swaptmp = Q(j, c);
-                Q(j, c) = Q(j, k);
-                Q(j, k) = swaptmp;
+        for (int j = 0; j < Q_.cols(); j++) {
+            if (Q_(j, c) != 0 || Q_(j, k) != 0) { // TODO: Optimize swap
+                swaptmp = Q_(j, c);
+                Q_(j, c) = Q_(j, k);
+                Q_(j, k) = swaptmp;
             }
         }
-        for (int j = 0; j < Q.cols(); j++) {
-            if (Q(c, j) != 0 || Q(k, j) != 0) { // TODO: Optimize swap
-                swaptmp = Q(c, j);
-                Q(c, j) = Q(k, j);
-                Q(k, j) = swaptmp;
+        for (int j = 0; j < Q_.cols(); j++) {
+            if (Q_(c, j) != 0 || Q_(k, j) != 0) { // TODO: Optimize swap
+                swaptmp = Q_(c, j);
+                Q_(c, j) = Q_(k, j);
+                Q_(k, j) = swaptmp;
             }
         }
         ReduceQ();
-        std::swap(pivots.at(k), pivots.at(c));
-        return;
+        std::swap(pivots_.at(k), pivots_.at(c));
     }
 }
 
 void AffineState::MakePrincipal(int c, int j) {
-    if (A(j, c) == 0) {
-        std::cout << "Error......." << std::endl;
+    if (A_(j, c) == 0) {
+        std::cerr << "Error......." << std::endl;
         return;
     } else {
-        for (int k = 0; k < r; k++) {
-            if (k != c && A(j, k) != 0) {
+        for (int k = 0; k < r_; k++) {
+            if (k != c && A_(j, k) != 0) {
                 ReindexSubtColumn(k, c);
             }
         }
-        pivots[c] = j;
-        return;
+        pivots_[c] = j;
     }
 }
 
 void AffineState::ReselectPrincipalRow(int j, int c) {
     int j_star = -1; // Equivalent to j_star = 0 in the paper (but we need to
                      // use -1 because of 0-indexing)
-    for (int jj = 0; jj < r;
+    for (int jj = 0; jj < r_;
          jj++) { // TODO: Rewrite to find optimal j_star (see paper)
-        if (A(jj, c) != 0) {
+        if (A_(jj, c) != 0) {
             j_star = jj;
             break;
         }
@@ -121,54 +113,53 @@ void AffineState::FixFinalBit(int z) {
     std::cout << "Entering FixFinalBit";
     print();
     int rtemp =
-        A.cols(); // Define this because sometimes this function gets called
-                  // from the ZeroColumnElim function, in which r might
-                  // temporarily not be out of sync with A's columns
+        A_.cols(); // Define this because sometimes this function gets called
+                   // from the ZeroColumnElim function, in which r_ might
+                   // temporarily not be out of sync with A_'s columns
     // TODO: (1) Optimize; and (2) try to avoid the if/else statement
-    int u = Q(rtemp - 1, rtemp - 1);
-    Eigen::VectorXi a = A(Eigen::all, rtemp - 1);
-    A.conservativeResize(Eigen::NoChange, rtemp - 1);
+    int u = Q_(rtemp - 1, rtemp - 1);
+    Eigen::VectorXi a = A_(Eigen::all, rtemp - 1);
+    A_.conservativeResize(Eigen::NoChange, rtemp - 1);
     if (rtemp == 1) { // Need to handle this special case separately because
                       // otherwise I have issues with Eigen...
-        Q.conservativeResize(0, 0);
+        Q_.conservativeResize(0, 0);
     } else {
         // print();
-        Eigen::VectorXi q = Q.topRightCorner(rtemp - 1, 1);
-        Q.conservativeResize(rtemp - 1, rtemp - 1);
-        Q += 2 * z * Eigen::MatrixXi(q.asDiagonal());
+        Eigen::VectorXi q = Q_.topRightCorner(rtemp - 1, 1);
+        Q_.conservativeResize(rtemp - 1, rtemp - 1);
+        Q_ += 2 * z * Eigen::MatrixXi(q.asDiagonal());
         ReduceQ();
     }
-    b += z * a;
-    ReduceVectorMod(b, 2);
-    phase = (phase + 2 * z * u) % 8;
+    b_ += z * a;
+    ReduceVectorMod(b_, 2);
+    phase_ = (phase_ + 2 * z * u) % 8;
     std::cout << "Almost done FixFinalBit";
     print();
-    std::cout << "r = " << r;
-    pivots.erase(rtemp - 1);
-    --r;
+    std::cout << "r = " << r_;
+    pivots_.erase(rtemp - 1);
+    --r_;
     std::cout << "Finished FixFinalBit";
     print();
-    return;
 }
 
 void AffineState::ZeroColumnElim(int c) {
-    // Recall: Matrix A has rank r and r+1 columns at this stage
+    // Recall: Matrix A_ has rank r_ and r_+1 columns at this stage
     std::cout << "Entering ZeroColumnElim...";
     print();
     ReindexSwapColumns(
-        c, r); // Step 1. We use r instead of r+1 here because of 0-indexing
+        c, r_); // Step 1. We use r_ instead of r_+1 here because of 0-indexing
     std::cout << "After calling ReindexSwapColumns";
     print();
-    Eigen::VectorXi q = Q(Eigen::seq(0, r - 1), r); // Step 2.
+    Eigen::VectorXi q = Q_(Eigen::seq(0, r_ - 1), r_); // Step 2.
     ReduceVectorMod(q, 2); // TODO: Check that this reduction is appropriate.
-    int u = Q(r, r) % 4;
-    A.conservativeResize(Eigen::NoChange, r);
-    Q.conservativeResize(r, r);
-    pivots.erase(r); // TODO: IS THIS CORRECT???????
+    int u = Q_(r_, r_) % 4;
+    A_.conservativeResize(Eigen::NoChange, r_);
+    Q_.conservativeResize(r_, r_);
+    pivots_.erase(r_); // TODO: IS THIS CORRECT???????
     if (u % 2 == 1) {
-        Q += (u - 2) * q * q.transpose();
+        Q_ += (u - 2) * q * q.transpose();
         ReduceQ();
-        phase = (phase - u + 2) % 8;
+        phase_ = (phase_ - u + 2) % 8;
         return;
     } else {
         std::cout << "Entering else part of ZeroColumnElim";
@@ -176,26 +167,26 @@ void AffineState::ZeroColumnElim(int c) {
         std::cout << "q = " << q.transpose() << std::endl;
         // TODO: Check whether q == \vec{0}? For now assume not
         int ell;
-        for (int i = 0; i < r; i++) {
+        for (int i = 0; i < r_; i++) {
             if (q(i) != 0) {
                 ell = i;
                 break;
             }
         }
         std::cout << "Selected value of ell = " << ell << std::endl;
-        for (int k = 0; k < r; k++) {
+        for (int k = 0; k < r_; k++) {
             if (q(k) != 0 && k != ell) {
                 ReindexSubtColumn(k, ell);
             }
         }
         std::cout << "Finished the ReindexSubtColumn part of ZeroColumnElim";
         print();
-        ReindexSwapColumns(r - 1, ell); // r-1 because of 0-indexing
+        ReindexSwapColumns(r_ - 1, ell); // r_-1 because of 0-indexing
         std::cout << "Finished the ReindexSwapColumns part of ZeroColumnElim";
         print();
         FixFinalBit(u / 2);
-        // for (auto const& pair : pivots) { // If column c was a pivot,
-        //	if (pair.first == c) { pivots.erase(pair.first); break; }
+        // for (auto const& pair : pivots_) { // If column c was a pivot,
+        //	if (pair.first == c) { pivots_.erase(pair.first); break; }
         // }
         return;
     }
@@ -208,8 +199,8 @@ void AffineState::H(int j) {
     print();
     // Step 1: Find c.
     int c = -1;
-    for (int i = 0; i < r; i++) {
-        if (pivots[i] == j) {
+    for (int i = 0; i < r_; i++) {
+        if (pivots_[i] == j) {
             c = i;
         }
     }
@@ -220,116 +211,107 @@ void AffineState::H(int j) {
         ReselectPrincipalRow(j, c);
         std::cout << "Step 2. After ReselectPrincipalRow: ";
         print();
-        if (j != pivots[c]) {
+        if (j != pivots_[c]) {
             c = -1;
         }
         std::cout << "After Step 2:  c = " << c << std::endl;
     }
 
     // Step 3:
-    std::cout << "Step 3. A = " << std::endl << A << std::endl;
+    std::cout << "Step 3. A = " << std::endl << A_ << std::endl;
     Eigen::VectorXi atilde;
-    atilde.setZero(r + 1); // r+1 entries
-    atilde(Eigen::seq(0, r - 1)) =
-        A(j, Eigen::all).transpose(); // Set the first r of them to row j of A.
+    atilde.setZero(r_ + 1); // r_+1 entries
+    atilde(Eigen::seq(0, r_ - 1)) =
+        A_(j, Eigen::all)
+            .transpose(); // Set the first r_ of them to row j of A_.
     std::cout << "Step 3. atilde = " << std::endl << atilde << std::endl;
 
     // Step 4:
     std::cout << "Before Step 4";
     print();
-    A.row(j).setZero();
-    A.conservativeResize(
+    A_.row(j).setZero();
+    A_.conservativeResize(
         Eigen::NoChange,
-        r + 1); // Add column, and (next two lines) set new column to e_j
-    A.col(r).setZero();
-    A(j, r) = 1;
-    pivots[r] = j;
+        r_ + 1); // Add column, and (next two lines) set new column to e_j
+    A_.col(r_).setZero();
+    A_(j, r_) = 1;
+    pivots_[r_] = j;
     std::cout << "After Step 4";
     print();
 
     // Step 5:
     std::cout << "Before Step 5";
     print();
-    Q.conservativeResize(r + 1, r + 1);
-    Q.row(r) = atilde.transpose();
-    Q.col(r) = atilde.transpose();
-    Q(r, r) = 2 * b(j); // Already reduced mod 4
+    Q_.conservativeResize(r_ + 1, r_ + 1);
+    Q_.row(r_) = atilde.transpose();
+    Q_.col(r_) = atilde.transpose();
+    Q_(r_, r_) = 2 * b_(j); // Already reduced mod 4
     std::cout << "After Step 5";
     print();
 
     // Step 6:
-    b(j) = 0;
+    b_(j) = 0;
     if (c > -1) {
         ZeroColumnElim(c);
     } else {
-        ++r;
+        ++r_;
     }
-    return;
 }
 
 void AffineState::CZ(int j, int k) {
-    if (A.cols() > 0) { // If psi is a computational basis state then A has zero
-                        // columns, so the next three lines do nothing
-        Eigen::VectorXi a_j = A(j, Eigen::all).transpose();
-        Eigen::VectorXi a_k = A(k, Eigen::all).transpose();
-        Q += a_j * a_k.transpose() + a_k * a_j.transpose() +
-             2 * Eigen::MatrixXi(
-                     (b(k) * a_j.asDiagonal() + b(j) * a_k.asDiagonal()));
+    if (A_.cols() > 0) { // If psi is a computational basis state then A_ has
+                         // zero columns, so the next three lines do nothing
+        Eigen::VectorXi a_j = A_(j, Eigen::all).transpose();
+        Eigen::VectorXi a_k = A_(k, Eigen::all).transpose();
+        Q_ += a_j * a_k.transpose() + a_k * a_j.transpose() +
+              2 * Eigen::MatrixXi(
+                      (b_(k) * a_j.asDiagonal() + b_(j) * a_k.asDiagonal()));
         ReduceQ();
     }
-    phase = (phase + 4 * b(j) * b(k)) % 8;
-    return;
+    phase_ = (phase_ + 4 * b_(j) * b_(k)) % 8;
 }
 
 void AffineState::CX(int j, int k) { // TODO: Use non-naive method.
     H(k);
     CZ(j, k);
     H(k);
-    return;
 }
 
 void AffineState::S(int j) {
-    Eigen::Vector<int, Eigen::Dynamic> a_j = A(j, Eigen::all).transpose();
-    Q += (1 - 2 * b(j)) * a_j * a_j.transpose();
+    Eigen::Vector<int, Eigen::Dynamic> a_j = A_(j, Eigen::all).transpose();
+    Q_ += (1 - 2 * b_(j)) * a_j * a_j.transpose();
     ReduceQ();
-    phase = (phase + 2 * b(j)) % 8;
-    return;
+    phase_ = (phase_ + 2 * b_(j)) % 8;
 }
 
-void AffineState::X(int j) {
-    b(j) = (b(j) + 1) % 2;
-    return;
-}
+void AffineState::X(int j) { b_(j) = (b_(j) + 1) % 2; }
 
 void AffineState::Z(int j) {
-    phase = (phase + 4 * (b(j))) % 8;
-    Q = Q + 2 * Eigen::MatrixXi(A(j, Eigen::all).asDiagonal());
+    phase_ = (phase_ + 4 * (b_(j))) % 8;
+    Q_ = Q_ + 2 * Eigen::MatrixXi(A_(j, Eigen::all).asDiagonal());
     ReduceQ();
-    return;
 }
 
 void AffineState::Y(int j) {
-    phase = (phase + 2) % 8;
+    phase_ = (phase_ + 2) % 8;
     Z(j);
     X(j);
-    return;
 }
 
 int AffineState::MeasureZ(int j) {
     // Check whether deterministic:
-    if (A(j, Eigen::all).isZero()) {
-        return b(j);
+    if (A_(j, Eigen::all).isZero()) {
+        return b_(j);
     } else {
-        int beta = std::rand() %
-                   2; // TODO: Optimize and use better source of randomness
+        int beta = random_bit();
         int k;
-        for (int i = 0; i < r; i++) { // TODO: Optimize
-            if (A(j, i) != 0) {
+        for (int i = 0; i < r_; i++) { // TODO: Optimize
+            if (A_(j, i) != 0) {
                 k = i;
             }
         }
-        ReindexSwapColumns(k, r - 1);
-        MakePrincipal(r - 1, j);
+        ReindexSwapColumns(k, r_ - 1);
+        MakePrincipal(r_ - 1, j);
         FixFinalBit(beta);
         return beta;
     }
@@ -341,7 +323,6 @@ void ReduceMatrixMod(Eigen::MatrixXi& M,
     M = M.array() - (modulus * (M.array() / modulus));
     M = M.array() + modulus;
     M = M.array() - (modulus * (M.array() / modulus));
-    return;
 }
 
 void ReduceVectorMod(Eigen::VectorXi& v,
@@ -350,52 +331,36 @@ void ReduceVectorMod(Eigen::VectorXi& v,
     v = v.array() - (modulus * (v.array() / modulus));
     v = v.array() + modulus;
     v = v.array() - (modulus * (v.array() / modulus));
-    return;
 }
 
 void AffineState::ReduceQ() { // TODO: Optimize
     // Need to reduce off-diagonal elements modulo 2 and diagonal elements
     // modulo 4
     /*std::cout << "Reducing Q..." << std::endl << std::endl;
-    std::cout << "Q = " << std::endl << Q << std::endl;*/
-    Eigen::MatrixXi Qdiag = Q.diagonal().asDiagonal();
-    Q = Q - Qdiag;
-    ReduceMatrixMod(Q, 2);
+    std::cout << "Q = " << std::endl << Q_ << std::endl;*/
+    Eigen::MatrixXi Qdiag = Q_.diagonal().asDiagonal();
+    Q_ = Q_ - Qdiag;
+    ReduceMatrixMod(Q_, 2);
     ReduceMatrixMod(Qdiag, 4);
-    Q += Qdiag;
-    /*std::cout << "Now, Q = " << std::endl << Q << std::endl;*/
-    return;
+    Q_ += Qdiag;
+    /*std::cout << "Now, Q = " << std::endl << Q_ << std::endl;*/
 }
 
 std::ostream& operator<<(std::ostream& out, AffineState const& psi) {
-    out << "n = " << psi.n << std::endl;
-    out << "r = " << psi.r << std::endl;
-    out << "phase = " << psi.phase << std::endl;
-    out << "Q = " << std::endl << psi.Q << std::endl;
-    out << "A = " << std::endl << psi.A << std::endl;
-    out << "b^T = " << psi.b.transpose() << std::endl;
+    out << "n = " << psi.n_ << '\n';
+    out << "r = " << psi.r_ << '\n';
+    out << "phase = " << psi.phase_ << '\n';
+    out << "Q = " << std::endl << psi.Q_ << '\n';
+    out << "A = " << std::endl << psi.A_ << '\n';
+    out << "b^T = " << psi.b_.transpose() << '\n';
     std::cout << "pivots = ";
-    for (const auto& p : psi.pivots) {
-        std::cout << "(" << p.first << ", " << p.second << "), ";
+    for (const auto& p : psi.pivots_) {
+        out << "(" << p.first << ", " << p.second << "), ";
     }
     return out;
 }
 
-void AffineState::print() {
-    std::cout << std::endl;
-    std::cout << "n = " << n << std::endl;
-    std::cout << "r = " << r << std::endl;
-    std::cout << "phase = " << phase << std::endl;
-    std::cout << "Q = " << std::endl << Q << std::endl;
-    std::cout << "A = " << std::endl << A << std::endl;
-    std::cout << "b^T = " << b.transpose() << std::endl;
-    std::cout << "pivots = ";
-    for (const auto& p : pivots) {
-        std::cout << "(" << p.first << ", " << p.second << "), ";
-    }
-    std::cout << std::endl;
-    return;
-}
+void AffineState::print() const { std::cout << '\n' << *this << std::endl; }
 
 // int RandomBit() { // TODO: Optimize. It's inefficient to build a new
 // generator each time a random bit is needed. 	std::random_device rd;

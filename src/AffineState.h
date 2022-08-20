@@ -7,27 +7,25 @@
 #include <map>
 #include <random>
 
-// using namespace Eigen;
-
 class AffineState {
   public:
-    // State is represented by exp(i*pi*phase/8)/sqrt(2^r) \sum_{x \in
-    // \{0,1\}^r} i^{x^T Q x} \ket{Ax + b mod 2}, where A is n\times r and has
-    // rank r <= n.
-    int n;     // number of qubits
-    int phase; // global phase is exp(i*pi*phase/8)
-    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> Q; // quadratic function
+    // State is represented by exp(i*pi*phase_/8)/sqrt(2^r_) \sum_{x \in
+    // \{0,1\}^r_} i^{x^T Q_ x} \ket{Ax + b_ mod 2}, where A_ is n_\times r_ and
+    // has rank r_ <= n_.
+    int n_;     // number of qubits
+    int phase_; // global phase_ is exp(i*pi*phase_/8)
+    Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> Q_; // quadratic function
     Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>
-        A;                                // affine space generating matrix
-    Eigen::Vector<int, Eigen::Dynamic> b; // affine space offset
+        A_;                                // affine space generating matrix
+    Eigen::Vector<int, Eigen::Dynamic> b_; // affine space offset
     std::map<int, int>
-        pivots; // AKA "principal index map." Keys are columns, values are the
-                // rows that contain pivots in those columns. Note that we are
-                // using zero-indexing, so the smallest key (assuming the map is
-                // nonempty) will always be 0, and the corresponding value is
-                // the index of the row that has a pivot in column 0.
+        pivots_; // AKA "principal index map." Keys are columns, values are the
+                 // rows that contain pivots_ in those columns. Note that we are
+                 // using zero-indexing, so the smallest key (assuming the map
+                 // is nonempty) will always be 0, and the corresponding value
+                 // is the index of the row that has a pivot in column 0.
 
-    AffineState(int m);
+    explicit AffineState(int n);
 
     // Gates and measurements
     void CZ(int a, int b);
@@ -43,8 +41,8 @@ class AffineState {
     friend std::ostream& operator<<(std::ostream& out, AffineState const& psi);
 
   private:
-    int r; // Technically unnecessary since this is just A.cols(), but it is
-           // handy to not have to declare it each time
+    int r_; // Technically unnecessary since this is just A_.cols(), but it is
+            // handy to not have to declare it each time
 
     // Subroutines
     void FixFinalBit(int z);
@@ -58,8 +56,8 @@ class AffineState {
     void
     ReduceQ(); // Reduces mod 4 on the diagonal and mod 2 on the off-diagonal
 
-    void print(); // Only used for printing state at intermediate stages of the
-                  // calculation when diagnosing errors
+    void print() const; // Only used for printing state at intermediate stages
+                        // of the calculation when diagnosing errors
 };
 
 // Small helper functions. Not sure if this is the best place to declare them?
