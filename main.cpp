@@ -16,6 +16,8 @@ void aReduceGramRowCol(int c, Eigen::MatrixXi &Q) {
 }
 
 int main() {
+    using namespace stab;
+
     /*MatrixXi Q_;
     Q_.setRandom(4, 4);
     std::cout << Q_ << std::endl;
@@ -71,4 +73,6 @@ int main() {
     std::cout << '\n';
     for (int i = 0; i < 10; ++i)
         std::cout << random_real(-10.0, 10.0) << ' ';
+
+    std::cout << std::endl;
 }
