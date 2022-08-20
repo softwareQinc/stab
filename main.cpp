@@ -5,9 +5,7 @@
 #include "AffineState.h"
 #include "random.h"
 
-using namespace Eigen;
-
-void aReduceGramRowCol(int c, MatrixXi& Q) {
+void aReduceGramRowCol(int c, Eigen::MatrixXi &Q) {
     Q(c, c) = (4 + Q(c, c) % 4) % 4;
     for (int i = 0; i < Q.cols(); i++) {
         if (i != c) {
