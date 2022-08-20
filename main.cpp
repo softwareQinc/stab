@@ -1,6 +1,5 @@
 #include <iostream>
 #include <Eigen/Dense>
-#include <random>
 #include "AffineState.h"
 
 using namespace Eigen;
@@ -13,7 +12,6 @@ void aReduceGramRowCol(int c, MatrixXi& Q) {
             Q(i, c) = (2 + Q(i, c) % 2) % 2;
         }
     }
-    return;
 }
 
 int main() {
@@ -52,5 +50,4 @@ int main() {
     //	psi.CZ(0, i);
     // }
     // std::cout << psi;
-    return 0;
 }
