@@ -44,7 +44,7 @@ namespace stab {
                 }
             }
             ReduceGramRowCol(k);
-            // ReduceQ();
+            ReduceQ();
         }
     }
 
@@ -94,7 +94,7 @@ namespace stab {
     void AffineState::ReselectPrincipalRow(int j, int c) {
         int j_star = -1; // Equivalent to j_star = 0 in the paper (but we need to
         // use -1 because of 0-indexing)
-        for (int jj = 0; jj < r_;
+        for (int jj = 0; jj < A_.cols();
              jj++) { // TODO: Rewrite to find optimal j_star (see paper)
             if (A_(jj, c) != 0) {
                 j_star = jj;
@@ -103,92 +103,78 @@ namespace stab {
         }
         if (j_star != -1) {
             MakePrincipal(c, j_star);
-            return;
-        } else { // TODO: Don't think is an error is necessary here, but should
-            // doublecheck eventually.
-            return;
-        }
+        } // (else, do nothing since reselecting row is impossible)
+        return;
     }
 
     void AffineState::FixFinalBit(int z) {
-        std::cout << "Entering FixFinalBit";
-        print();
-        int rtemp =
-                A_.cols(); // Define this because sometimes this function gets called
-        // from the ZeroColumnElim function, in which r_ might
-        // temporarily not be out of sync with A_'s columns
-        // TODO: (1) Optimize; and (2) try to avoid the if/else statement
-        int u = Q_(rtemp - 1, rtemp - 1);
-        Eigen::VectorXi a = A_(Eigen::all, rtemp - 1);
-        A_.conservativeResize(Eigen::NoChange, rtemp - 1);
-        if (rtemp == 1) { // Need to handle this special case separately because
-            // otherwise I have issues with Eigen...
-            Q_.conservativeResize(0, 0);
-        } else {
-            // print();
-            Eigen::VectorXi q = Q_.topRightCorner(rtemp - 1, 1);
-            Q_.conservativeResize(rtemp - 1, rtemp - 1);
-            Q_ += 2 * z * Eigen::MatrixXi(q.asDiagonal());
-            ReduceQ();
+        // TODO: Confirm that whenever this function is called, A_ will have r_ columns and rank = r_
+
+        // Step 1:
+        Eigen::VectorXi a = A_(Eigen::all, r_ - 1); // r_ - 1 because of 0-indexing
+        Eigen::VectorXi q;
+        if (r_ > 1) { // If r == 1 then the line below throws an error due to r_ - 2
+            q = Q_(Eigen::seq(0, r_ - 2), r_ - 1); 
         }
+        int u = Q_(r_ - 1, r_ - 1) % 4;
+        // Step 2:
+        A_.conservativeResize(Eigen::NoChange, r_ - 1); // Keep only first r_ - 1 columns
+        Q_.conservativeResize(r_ - 1, r_ - 1);
+
+        // Step 3:
+        Q_ += 2 * z * q.asDiagonal();
+        ReduceQ(); // TODO: Possibly unnecessary
         b_ += z * a;
         ReduceVectorMod(b_, 2);
         phase_ = (phase_ + 2 * z * u) % 8;
-        std::cout << "Almost done FixFinalBit";
-        print();
-        std::cout << "r = " << r_;
-        pivots_.erase(rtemp - 1);
+
+        // Step 4:
+        pivots_.erase(r_ - 1);
         --r_;
-        std::cout << "Finished FixFinalBit";
-        print();
+
+        return;
     }
 
     void AffineState::ZeroColumnElim(int c) {
         // Recall: Matrix A_ has rank r_ and r_+1 columns at this stage
-        std::cout << "Entering ZeroColumnElim...";
-        print();
-        ReindexSwapColumns(
-                c, r_); // Step 1. We use r_ instead of r_+1 here because of 0-indexing
-        std::cout << "After calling ReindexSwapColumns";
-        print();
+
+        // Step 1:
+        ReindexSwapColumns(c, r_); // Use r_ instead of r_+1 here because of 0-indexing
+
+        // Step 2:
         Eigen::VectorXi q = Q_(Eigen::seq(0, r_ - 1), r_); // Step 2.
-        ReduceVectorMod(q, 2); // TODO: Check that this reduction is appropriate.
         int u = Q_(r_, r_) % 4;
-        A_.conservativeResize(Eigen::NoChange, r_);
-        Q_.conservativeResize(r_, r_);
-        pivots_.erase(r_); // TODO: IS THIS CORRECT???????
+
+        // Step 3:
+        A_.conservativeResize(Eigen::NoChange, r_); // A^(2) from paper
+        Q_.conservativeResize(r_, r_); // Q^(2) from paper
+
+        // Step 3.5:
+        pivots_.erase(r_); // <-- Both parts of the if statement in Step 4 require us to do this
+
+        // Step 4
         if (u % 2 == 1) {
-            Q_ += (u - 2) * q * q.transpose();
+            Q_ += (2 - u) * q * q.transpose(); // TODO: Confirm that the "u-2" from the paper is an error
             ReduceQ();
             phase_ = (phase_ - u + 2) % 8;
             return;
         } else {
-            std::cout << "Entering else part of ZeroColumnElim";
-            print();
-            std::cout << "q = " << q.transpose() << std::endl;
             // TODO: Check whether q == \vec{0}? For now assume not
             int ell;
             for (int i = 0; i < r_; i++) {
                 if (q(i) != 0) {
-                    ell = i;
+                    ell = i; // Because q is guaranteed to be nonzero, we are guaranteed to initialize ell eventually
                     break;
                 }
             }
-            std::cout << "Selected value of ell = " << ell << std::endl;
             for (int k = 0; k < r_; k++) {
                 if (q(k) != 0 && k != ell) {
                     ReindexSubtColumn(k, ell);
                 }
             }
-            std::cout << "Finished the ReindexSubtColumn part of ZeroColumnElim";
-            print();
-            ReindexSwapColumns(r_ - 1, ell); // r_-1 because of 0-indexing
-            std::cout << "Finished the ReindexSwapColumns part of ZeroColumnElim";
-            print();
+            ReindexSwapColumns(r_ - 1, ell); // r_-1 because of 0-indexing. This step also produces A^(3) and Q^(3)
+            // At this point, A_ and Q_ should have r_ columns each. Also, since we removed the zero column in Step 3, the rank of A_ should be r_
             FixFinalBit(u / 2);
-            // for (auto const& pair : pivots_) { // If column c was a pivot,
-            //	if (pair.first == c) { pivots_.erase(pair.first); break; }
-            // }
             return;
         }
     }
@@ -196,40 +182,30 @@ namespace stab {
 // GATES:
     void AffineState::H(int j) {
         ReduceQ(); // TODO: Removing this probably is fine
-        std::cout << "State entering Hadamard subroutine:";
-        print();
+
         // Step 1: Find c.
-        int c = -1;
-        for (int i = 0; i < r_; i++) {
-            if (pivots_[i] == j) {
-                c = i;
+        int c = -1; // c = -1 will indicate that row j is not a pivot
+        for (int column_i = 0; column_i < r_; column_i++) {
+            if (pivots_[column_i] == j) {
+                c = column_i;
+                break;
             }
         }
-        std::cout << "Step 1: found c = " << c << std::endl;
         if (c > -1) { // Step 2. (Using -1 instead of 0 because of 0-indexing.)
-            std::cout << "Step 2. Before ReselectPrincipalRow: ";
-            print();
             ReselectPrincipalRow(j, c);
-            std::cout << "Step 2. After ReselectPrincipalRow: ";
-            print();
-            if (j != pivots_[c]) {
-                c = -1;
+            if (pivots_[c] != j) { // Check if reselection was successful
+                c = -1; // Indicates that row j is not/no longer a pivot
             }
-            std::cout << "After Step 2:  c = " << c << std::endl;
         }
 
         // Step 3:
-        std::cout << "Step 3. A = " << std::endl << A_ << std::endl;
         Eigen::VectorXi atilde;
-        atilde.setZero(r_ + 1); // r_+1 entries
+        atilde.setZero(r_ + 1);
         atilde(Eigen::seq(0, r_ - 1)) =
                 A_(j, Eigen::all)
-                        .transpose(); // Set the first r_ of them to row j of A_.
-        std::cout << "Step 3. atilde = " << std::endl << atilde << std::endl;
+                        .transpose(); // Set atilde = [row j of A_ | 0 ]^T \in \{0,1\}^{r+1}
 
         // Step 4:
-        std::cout << "Before Step 4";
-        print();
         A_.row(j).setZero();
         A_.conservativeResize(
                 Eigen::NoChange,
@@ -237,31 +213,27 @@ namespace stab {
         A_.col(r_).setZero();
         A_(j, r_) = 1;
         pivots_[r_] = j;
-        std::cout << "After Step 4";
-        print();
 
         // Step 5:
-        std::cout << "Before Step 5";
-        print();
         Q_.conservativeResize(r_ + 1, r_ + 1);
         Q_.row(r_) = atilde.transpose();
         Q_.col(r_) = atilde.transpose();
         Q_(r_, r_) = 2 * b_(j); // Already reduced mod 4
-        std::cout << "After Step 5";
-        print();
+        ReduceQ(); // TODO: Probably unnecessary
 
         // Step 6:
         b_(j) = 0;
-        if (c > -1) {
+        // Step 7:
+        if (c > -1) { // Case 2 from Alex's notes
             ZeroColumnElim(c);
-        } else {
+        } else { // Case 1 from Alex's notes
             ++r_;
         }
     }
 
     void AffineState::CZ(int j, int k) {
         if (A_.cols() > 0) { // If psi is a computational basis state then A_ has
-            // zero columns, so the next three lines do nothing
+            // zero columns, so the next three lines would do nothing anyway
             Eigen::VectorXi a_j = A_(j, Eigen::all).transpose();
             Eigen::VectorXi a_k = A_(k, Eigen::all).transpose();
             Q_ += a_j * a_k.transpose() + a_k * a_j.transpose() +
@@ -279,7 +251,7 @@ namespace stab {
     }
 
     void AffineState::S(int j) {
-        Eigen::Vector<int, Eigen::Dynamic> a_j = A_(j, Eigen::all).transpose();
+        Eigen::VectorXi a_j = A_(j, Eigen::all).transpose();
         Q_ += (1 - 2 * b_(j)) * a_j * a_j.transpose();
         ReduceQ();
         phase_ = (phase_ + 2 * b_(j)) % 8;
@@ -289,7 +261,7 @@ namespace stab {
 
     void AffineState::Z(int j) {
         phase_ = (phase_ + 4 * (b_(j))) % 8;
-        Q_ = Q_ + 2 * Eigen::MatrixXi(A_(j, Eigen::all).asDiagonal());
+        Q_ += 2 * Eigen::MatrixXi(A_(j, Eigen::all).asDiagonal());
         ReduceQ();
     }
 
@@ -309,6 +281,7 @@ namespace stab {
             for (int i = 0; i < r_; i++) { // TODO: Optimize
                 if (A_(j, i) != 0) {
                     k = i;
+                    break;
                 }
             }
             ReindexSwapColumns(k, r_ - 1);
