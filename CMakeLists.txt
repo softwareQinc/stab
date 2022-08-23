@@ -9,3 +9,7 @@ file(GLOB SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 
 add_executable(stab main.cpp ${SOURCES})
 target_link_libraries(stab Eigen3::Eigen)
+
+#### qasmtools library
+target_include_directories(stab PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/qasmtools/include/>)
