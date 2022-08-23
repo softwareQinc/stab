@@ -123,6 +123,16 @@ class QASMSimulator final : public ast::Visitor {
     void visit(ast::BarrierGate&) override {}
 
     void visit(ast::DeclaredGate& dgate) override {
+        /*if (dgate.name() == "x") {
+            std::vector<int> id = get_ids(dgate.qarg(0));
+            for (int i : id) {
+                psi.X(i);
+            }
+        } else if (dgate.name() == "cz") {
+            std::vector<int> id1 = get_ids(dgate.qarg(0));
+            std::vector<int> id2 = get_ids(dgate.qarg(1));
+            psi.CZ(x, y) for some x,y
+        }*/
         throw std::logic_error("Not supported");
     }
 
@@ -147,6 +157,11 @@ class QASMSimulator final : public ast::Visitor {
     void visit(ast::Program& prog) override {
         prog.foreach_stmt([this](auto& stmt) { stmt.accept(*this); });
     }
+
+  private:
+    /*std::vector<int> get_ids(ast::VarAccess& va) {
+        return something;
+    }*/
 };
 
 inline void simulate(std::istream& stream) {
