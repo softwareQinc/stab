@@ -9,6 +9,9 @@ int main() {
     using namespace stab;
 
     AffineState psi(3);
+    psi.X(0);
+    psi.X(1);
+    psi.X(2);
     psi.H(0);
     psi.H(1);
     psi.H(2);
@@ -17,28 +20,26 @@ int main() {
     psi.CZ(1, 2);
     psi.H(0);
     psi.H(1);
-    psi.H(2);
     std::cout << psi;
 
-    /*std::cout << '\n';
-    for (int i = 0; i < 10; ++i)
-        std::cout << random_bit(0.3) << ' ';
 
-    std::cout << '\n';
-    for (int i = 0; i < 10; ++i)
-        std::cout << random_bit(0.7) << ' ';
 
-    std::cout << '\n';
-    for (int i = 0; i < 10; ++i)
-        std::cout << random_bit() << ' ';
+    // Initialize state directly so that we don't get flooded with console output
+    //AffineState psi(3);
+    //psi.A_.conservativeResize(3, 2);
+    //psi.A_ << 1, 1, 0, 1, 1, 0;
+    //psi.Q_.conservativeResize(2, 2);
+    //psi.Q_ << 2, 1, 1, 2;
+    //psi.r_ = 2;
+    //psi.b_ << 1, 0, 0;
+    //psi.pivots_[0] = 2;
+    //psi.pivots_[1] = 1;
 
-    std::cout << '\n';
-    for (int i = 0; i < 10; ++i)
-        std::cout << random_integer(-10, 10) << ' ';
+    //psi.H(1);
+    ////psi.H(2);
+    //std::cout << psi;
 
-    std::cout << '\n';
-    for (int i = 0; i < 10; ++i)
-        std::cout << random_real(-10.0, 10.0) << ' ';*/
+
 
     std::cout << std::endl;
 }

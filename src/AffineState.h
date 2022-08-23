@@ -48,9 +48,10 @@ namespace stab {
         // Option to print state
         friend std::ostream &operator<<(std::ostream &out, AffineState const &psi);
 
-    private:
-        int r_; // Technically unnecessary since this is just A_.cols(), but it is
+        //TODO: Move r_ back to private member variables. It's only here for debugging currently
+        int r_; // Technically unnecessary since this is usually A_.cols() or rank of A_, but it is
         // handy to not have to declare it each time
+    private:
 
         // Subroutines
         void FixFinalBit(int z);

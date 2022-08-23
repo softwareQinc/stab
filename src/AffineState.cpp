@@ -29,20 +29,23 @@ namespace stab {
     }
 
     void AffineState::ReindexSubtColumn(int k, int c) {
+        // Applies the update Column k of A <--- Column k - Column c
         if (c != k) {
             for (int j = 0; j < n_; j++) {
-                if (A_(j, c) != 0) {
-                    A_(j, k) = (A_(j, k) + 1) % 2;
-                }
+                A_(j, k) = (A_(j, k) + A_(j, c)) % 2;
             }
+            int Qcc = Q_(c, c);
             for (int h = 0; h < Q_.cols(); h++) {
                 if (Q_(h, c) != 0) {
-                    Q_(h, k) -= Q_(h, c);
+                    //Q_(h, k) -= Q_(h, c);
+                    Q_(h, k) += Q_(h, c); // TODO: Check whether +/- is correct
                 }
                 if (Q_(c, h) != 0) {
-                    Q_(k, h) -= Q_(c, h);
+                    //Q_(k, h) -= Q_(c, h);
+                    Q_(k, h) += Q_(c, h); // TODO: Check whether +/- is correct
                 }
             }
+            Q_(k, k) += Qcc; // TODO: Check whether correct
             ReduceGramRowCol(k);
             ReduceQ();
         }
@@ -96,7 +99,7 @@ namespace stab {
         // use -1 because of 0-indexing)
         for (int jj = 0; jj < A_.cols();
              jj++) { // TODO: Rewrite to find optimal j_star (see paper)
-            if (A_(jj, c) != 0) {
+            if (A_(jj, c) != 0 && jj != j) {
                 j_star = jj;
                 break;
             }
@@ -191,7 +194,9 @@ namespace stab {
                 break;
             }
         }
-        if (c > -1) { // Step 2. (Using -1 instead of 0 because of 0-indexing.)
+        
+        // Step 2. (Using -1 instead of 0 because of 0-indexing.)
+        if (c > -1) {
             ReselectPrincipalRow(j, c);
             if (pivots_[c] != j) { // Check if reselection was successful
                 c = -1; // Indicates that row j is not/no longer a pivot
@@ -321,6 +326,7 @@ namespace stab {
     }
 
     std::ostream &operator<<(std::ostream &out, AffineState const &psi) {
+        out << "STATE IS GIVEN BY: \n";
         out << "n = " << psi.n_ << '\n';
         out << "r = " << psi.r_ << '\n';
         out << "phase = " << psi.phase_ << '\n';
