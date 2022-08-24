@@ -34,7 +34,7 @@ namespace stab {
             for (int j = 0; j < n_; j++) {
                 A_(j, k) = (A_(j, k) + A_(j, c)) % 2;
             }
-            int Qcc = Q_(c, c);
+            int qcc = Q_(c, c);
             for (int h = 0; h < Q_.cols(); h++) {
                 if (Q_(h, c) != 0) {
                     //Q_(h, k) -= Q_(h, c);
@@ -45,7 +45,7 @@ namespace stab {
                     Q_(k, h) += Q_(c, h); // TODO: Check whether +/- is correct
                 }
             }
-            Q_(k, k) += Qcc; // TODO: Check whether correct
+            Q_(k, k) += qcc; // TODO: Check whether correct
             ReduceGramRowCol(k);
             ReduceQ();
         }
@@ -296,6 +296,13 @@ namespace stab {
         }
     }
 
+    void AffineState::Reset(int j) {
+        int tmp = MeasureZ(j);
+        if (tmp == 1) {
+            X(j);
+        }
+    }
+
     void ReduceMatrixMod(Eigen::MatrixXi &M,
                          int modulus) { // TODO: This is a really silly way of doing
         // it. Should find something better
@@ -327,18 +334,23 @@ namespace stab {
 
     std::ostream &operator<<(std::ostream &out, AffineState const &psi) {
         out << "STATE IS GIVEN BY: \n";
-        out << "n = " << psi.n_ << '\n';
-        out << "r = " << psi.r_ << '\n';
+        //out << "n = " << psi.n_ << '\n';
+        //out << "r = " << psi.r_ << '\n';
         out << "phase = " << psi.phase_ << '\n';
         out << "Q = " << std::endl << psi.Q_ << '\n';
         out << "A = " << std::endl << psi.A_ << '\n';
         out << "b^T = " << psi.b_.transpose() << '\n';
-        std::cout << "pivots = ";
+        /*std::cout << "pivots = ";
         for (const auto &p: psi.pivots_) {
             out << "(" << p.first << ", " << p.second << "), ";
-        }
+        }*/
         return out;
     }
 
     void AffineState::print() const { std::cout << '\n' << *this << std::endl; }
+
+    void AffineState::print_amplitudes() {
+        // TODO: It would be nice to have some way to print out each ket and amplitude
+    }
+
 } // namespace stab

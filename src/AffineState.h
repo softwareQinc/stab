@@ -45,13 +45,16 @@ namespace stab {
 
         int MeasureZ(int j); // Returns outcome and updates state
 
+        void Reset(int j); // Resets qubit j to |0>
+
+        void print_amplitudes();
+
         // Option to print state
         friend std::ostream &operator<<(std::ostream &out, AffineState const &psi);
 
-        //TODO: Move r_ back to private member variables. It's only here for debugging currently
+    private:
         int r_; // Technically unnecessary since this is usually A_.cols() or rank of A_, but it is
         // handy to not have to declare it each time
-    private:
 
         // Subroutines
         void FixFinalBit(int z);

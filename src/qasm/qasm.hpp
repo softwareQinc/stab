@@ -14,9 +14,11 @@ class QASMSimulator final : public ast::Visitor {
     stab::AffineState psi;
     double
         temp_value; ///< stores intermediate values when computing expressions
+    std::unordered_map<std::string, std::pair<int, int>> qregs;
+    int num_qubits;
 
   public:
-    explicit QASMSimulator(int num_qubits) : psi(num_qubits), temp_value(0) {}
+    explicit QASMSimulator(int nq) : psi(nq), temp_value(0), num_qubits(0) {}
 
     stab::AffineState run(ast::Program& prog) {
         prog.accept(*this);
@@ -100,11 +102,17 @@ class QASMSimulator final : public ast::Visitor {
 
     // Statements
     void visit(ast::MeasureStmt& stmt) override {
-        throw std::logic_error("Not supported");
+        std::vector<int> id = get_ids(stmt.q_arg());
+        for (int i : id) {
+            psi.MeasureZ(i);
+        }
     }
 
     void visit(ast::ResetStmt& stmt) override {
-        throw std::logic_error("Not supported");
+        std::vector<int> id = get_ids(stmt.arg());
+        for (int i : id) {
+            psi.Reset(i);
+        }
     }
 
     void visit(ast::IfStmt& stmt) override {
@@ -122,35 +130,72 @@ class QASMSimulator final : public ast::Visitor {
 
     void visit(ast::BarrierGate&) override {}
 
-    void visit(ast::DeclaredGate& dgate) override {
-        /*if (dgate.name() == "x") {
-            std::vector<int> id = get_ids(dgate.qarg(0));
-            for (int i : id) {
+    void visit(ast::DeclaredGate& dgate) override { // TODO: Optimize?
+        // First, get qubit ids.
+        std::vector<int> id1 = get_ids(dgate.qarg(0));
+        std::vector<int> id2; // Only needed for two-qubit gates:
+        if (dgate.name() == "cx" || dgate.name() == "cz") {
+            id2 = get_ids(dgate.qarg(1));
+        }
+        
+        // Now apply the gates.
+        // One-qubit gates:
+        if (dgate.name() == "h") {
+            for (int i : id1) {
+                psi.H(i);
+            }
+        } else if (dgate.name() == "s") {
+            for (int i : id1) {
+                psi.S(i);
+            }
+        } else if (dgate.name() == "x") {
+            for (int i : id1) {
                 psi.X(i);
             }
+        } else if (dgate.name() == "y") {
+            for (int i : id1) {
+                psi.Y(i);
+            }
+        } else if (dgate.name() == "z") {
+            for (int i : id1) {
+                psi.Z(i);
+            }
+        } /*Now two-qubit gates*/ else if (dgate.name() == "cx") {
+            for (int x : id1) {
+                for (int y : id2) {
+                    psi.CX(x, y);
+                }
+            }
         } else if (dgate.name() == "cz") {
-            std::vector<int> id1 = get_ids(dgate.qarg(0));
-            std::vector<int> id2 = get_ids(dgate.qarg(1));
-            psi.CZ(x, y) for some x,y
-        }*/
-        throw std::logic_error("Not supported");
+            for (int x : id1) {
+                for (int y : id2) {
+                    psi.CZ(x, y);
+                }
+            }
+        } /*Otherwise it's some other unsupported gate*/ else {
+            throw std::logic_error("Not supported");
+        }
+        return;
     }
 
     // Declarations
     void visit(ast::GateDecl& decl) override {
-        throw std::logic_error("Not supported");
+        //throw std::logic_error("Not supported");
     }
 
     void visit(ast::OracleDecl& decl) override {
         throw std::logic_error("Not supported");
     }
 
-    void visit(ast::RegisterDecl& decl) override {
+    void visit(ast::AncillaDecl& decl) override {
         throw std::logic_error("Not supported");
     }
 
-    void visit(ast::AncillaDecl& decl) override {
-        throw std::logic_error("Not supported");
+    void visit(ast::RegisterDecl& decl) override {
+        if (decl.is_quantum()) {
+            qregs[decl.id()] = {num_qubits, decl.size()};
+            num_qubits += decl.size();
+        }
     }
 
     // Program
@@ -159,9 +204,17 @@ class QASMSimulator final : public ast::Visitor {
     }
 
   private:
-    /*std::vector<int> get_ids(ast::VarAccess& va) {
-        return something;
-    }*/
+    std::vector<int> get_ids(ast::VarAccess& va) {
+        std::vector<int> ids;
+        if (va.offset()) {
+            ids.push_back(qregs[va.var()].first + *va.offset());
+        } else {
+            for (int i = 0; i < qregs[va.var()].second; ++i) {
+                ids.push_back(qregs[va.var()].first + i);
+            }
+        }
+        return ids;
+    }
 };
 
 inline void simulate(std::istream& stream) {
