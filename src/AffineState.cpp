@@ -3,6 +3,7 @@
 #include <map>
 #include <random>
 #include <vector>
+#include <bitset>
 
 #include <Eigen/Dense>
 
@@ -336,7 +337,7 @@ namespace stab {
         out << "STATE IS GIVEN BY: \n";
         //out << "n = " << psi.n_ << '\n';
         //out << "r = " << psi.r_ << '\n';
-        out << "phase = " << psi.phase_ << '\n';
+        out << "phase = exp(" << psi.phase_ << "*i*pi/8)\n";
         out << "Q = " << std::endl << psi.Q_ << '\n';
         out << "A = " << std::endl << psi.A_ << '\n';
         out << "b^T = " << psi.b_.transpose() << '\n';
@@ -350,7 +351,42 @@ namespace stab {
     void AffineState::print() const { std::cout << '\n' << *this << std::endl; }
 
     void AffineState::print_amplitudes() {
-        // TODO: It would be nice to have some way to print out each ket and amplitude
+        // Very naive way of printing the state, but this will mainly be used for debugging. We can always optimize it later if it's important.
+        if (r_ > 15) {
+            std::cout << "Too many amplitudes to print\n";
+        } else {
+            std::cout << "Global phase exp(" << phase_ << "*i*pi/8)\n";
+            Eigen::VectorXi x;
+            x.setZero(r_);
+            for (int i = 0; i < pow(2, r_); ++i) {
+                std::bitset<16> bs(i); // Get binary string
+                for (int j = 0; j < r_; ++j) { // Cast binary string to x
+                    x(j) = int(bs[j]);
+                }
+
+                Eigen::VectorXi ket = A_ * x + b_;
+                ReduceVectorMod(ket, 2);
+                std::string rel_phase;
+                switch ((x.transpose() * Q_ * x) % 4) {
+                    case 0:
+                        rel_phase = "  ";
+                        break;
+                    case 1:
+                        rel_phase = " i";
+                        break;
+                    case 2:
+                        rel_phase = " -";
+                        break;
+                    case 3:
+                        rel_phase = "-i";
+                        break;
+                    default:
+                        rel_phase = "abc";
+                }
+
+                std::cout << rel_phase << "|" << ket.transpose() << ">\n";
+            }       
+        }        
     }
 
 } // namespace stab
