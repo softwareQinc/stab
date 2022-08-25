@@ -54,52 +54,28 @@ namespace stab {
 
     void AffineState::ReindexSwapColumns(int k, int c) {
         if (c != k) {
-            int swaptmp;
-            for (int j = 0; j < n_; j++) {
-                if (A_(j, c) != 0 || A_(j, k) != 0) { // TODO: Optimize swap
-                    swaptmp = A_(j, c);
-                    A_(j, c) = A_(j, k);
-                    A_(j, k) = swaptmp;
-                }
-            }
-            for (int j = 0; j < Q_.cols(); j++) {
-                if (Q_(j, c) != 0 || Q_(j, k) != 0) { // TODO: Optimize swap
-                    swaptmp = Q_(j, c);
-                    Q_(j, c) = Q_(j, k);
-                    Q_(j, k) = swaptmp;
-                }
-            }
-            for (int j = 0; j < Q_.cols(); j++) {
-                if (Q_(c, j) != 0 || Q_(k, j) != 0) { // TODO: Optimize swap
-                    swaptmp = Q_(c, j);
-                    Q_(c, j) = Q_(k, j);
-                    Q_(k, j) = swaptmp;
-                }
-            }
-            ReduceQ();
+            A_.col(k).swap(A_.col(c));
+            Q_.col(k).swap(Q_.col(c));
+            Q_.row(k).swap(Q_.row(c));
             std::swap(pivots_.at(k), pivots_.at(c));
         }
     }
 
     void AffineState::MakePrincipal(int c, int j) {
-        if (A_(j, c) == 0) {
-            std::cerr << "Error......." << std::endl;
-            return;
-        } else {
-            for (int k = 0; k < r_; k++) {
-                if (k != c && A_(j, k) != 0) {
-                    ReindexSubtColumn(k, c);
-                }
+        assert(A_(j, c) != 0);
+        for (int k = 0; k < r_; k++) {
+            if (k != c && A_(j, k) != 0) {
+                ReindexSubtColumn(k, c);
             }
-            pivots_[c] = j;
         }
+        pivots_[c] = j;
     }
 
     void AffineState::ReselectPrincipalRow(int j, int c) {
         int j_star = -1; // Equivalent to j_star = 0 in the paper (but we need to
         // use -1 because of 0-indexing)
         for (int jj = 0; jj < A_.cols();
-             jj++) { // TODO: Rewrite to find optimal j_star (see paper)
+             jj++) { //TODO: Choose optimal j_star (see paper)
             if (A_(jj, c) != 0 && jj != j) {
                 j_star = jj;
                 break;
@@ -112,7 +88,7 @@ namespace stab {
     }
 
     void AffineState::FixFinalBit(int z) {
-        // TODO: Confirm that whenever this function is called, A_ will have r_ columns and rank = r_
+        assert(r_ > 0);
 
         // Step 1:
         Eigen::VectorXi a = A_(Eigen::all, r_ - 1); // r_ - 1 because of 0-indexing
@@ -121,13 +97,14 @@ namespace stab {
             q = Q_(Eigen::seq(0, r_ - 2), r_ - 1); 
         }
         int u = Q_(r_ - 1, r_ - 1) % 4;
+
         // Step 2:
         A_.conservativeResize(Eigen::NoChange, r_ - 1); // Keep only first r_ - 1 columns
         Q_.conservativeResize(r_ - 1, r_ - 1);
 
         // Step 3:
         Q_ += 2 * z * q.asDiagonal();
-        ReduceQ(); // TODO: Possibly unnecessary
+        ReduceQ(); // TODO: Only need to reduce diagonal. Also guaranteed entries >= 0
         b_ += z * a;
         ReduceVectorMod(b_, 2);
         phase_ = (phase_ + 2 * z * u) % 8;
@@ -336,15 +313,12 @@ namespace stab {
     std::ostream &operator<<(std::ostream &out, AffineState const &psi) {
         out << "STATE IS GIVEN BY: \n";
         //out << "n = " << psi.n_ << '\n';
-        //out << "r = " << psi.r_ << '\n';
         out << "phase = exp(" << psi.phase_ << "*i*pi/8)\n";
-        out << "Q = " << std::endl << psi.Q_ << '\n';
-        out << "A = " << std::endl << psi.A_ << '\n';
+        if (psi.r_ > 0) { // If psi is a computational basis state, no need to print this stuff
+            out << "Q = " << std::endl << psi.Q_ << '\n';
+            out << "A = " << std::endl << psi.A_ << '\n';
+        }
         out << "b^T = " << psi.b_.transpose() << '\n';
-        /*std::cout << "pivots = ";
-        for (const auto &p: psi.pivots_) {
-            out << "(" << p.first << ", " << p.second << "), ";
-        }*/
         return out;
     }
 

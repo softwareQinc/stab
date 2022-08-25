@@ -10,41 +10,18 @@
 namespace stab {
     class AffineState {
     public:
-        // State is represented by exp(i*pi*phase_/8)/sqrt(2^r_) \sum_{x \in
-        // \{0,1\}^r_} i^{x^T Q_ x} \ket{Ax + b_ mod 2}, where A_ is n_\times r_ and
-        // has rank r_ <= n_.
-        int n_;     // number of qubits
-        int phase_; // global phase_ is exp(i*pi*phase_/8)
-        Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> Q_; // quadratic function
-        Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>
-                A_;                                // affine space generating matrix
-        Eigen::Vector<int, Eigen::Dynamic> b_; // affine space offset
-        std::map<int, int>
-                pivots_; // AKA "principal index map." Keys are columns, values are the
-        // rows that contain pivots_ in those columns. Note that we are
-        // using zero-indexing, so the smallest key (assuming the map
-        // is nonempty) will always be 0, and the corresponding value
-        // is the index of the row that has a pivot in column 0.
 
         explicit AffineState(int n);
 
         // Gates and measurements
         void CZ(int a, int b);
-
         void CX(int a, int b);
-
         void S(int j);
-
         void H(int a);
-
         void X(int j);
-
         void Y(int j);
-
         void Z(int j);
-
         int MeasureZ(int j); // Returns outcome and updates state
-
         void Reset(int j); // Resets qubit j to |0>
 
         void print_amplitudes();
@@ -53,6 +30,21 @@ namespace stab {
         friend std::ostream &operator<<(std::ostream &out, AffineState const &psi);
 
     private:
+        // State is represented by exp(i*pi*phase_/8)/sqrt(2^r_) \sum_{x \in
+        // \{0,1\}^r_} i^{x^T Q_ x} \ket{Ax + b_ mod 2}, where A_ is n_\times r_ and
+        // has rank r_ <= n_.
+        int n_;     // number of qubits
+        int phase_; // global phase_ is exp(i*pi*phase_/8)
+        Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> Q_;
+        Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> A_;
+        Eigen::Vector<int, Eigen::Dynamic> b_;
+        std::map<int, int>
+                pivots_; // AKA "principal index map." Keys are columns, values are the
+        // rows that contain pivots_ in those columns. Note that we are
+        // using zero-indexing, so the smallest key (assuming the map
+        // is nonempty) will always be 0, and the corresponding value
+        // is the index of the row that has a pivot in column 0.
+        // TODO: pivots can probably be changed to an std::unordered_map
         int r_; // Technically unnecessary since this is usually A_.cols() or rank of A_, but it is
         // handy to not have to declare it each time
 
