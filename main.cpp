@@ -10,7 +10,12 @@ int main() {
     using namespace stab;
 
     Eigen::MatrixXi A;
-    A.setRandom(3, 3);
+    A.setRandom(4, 4);
+    std::cout << "A = " << A << "\n";
+    Eigen::VectorXi r1 = A.row(1);
+    r1(0) = 0;
+    std::cout << "A = " << A << "\n";
+    std::cout << "r1 = " << r1 << "\n";
 
     //std::string prog(
     //    "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[4];\ncreg c[4];\nh q[0];\nh q[1];\nh q[2];\nh q[3];\nz "

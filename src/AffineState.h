@@ -71,15 +71,16 @@ namespace stab {
         // of the calculation when diagnosing errors
     }; // class AffineState
 
-// Small helper functions. Not sure if this is the best place to declare them?
+// Small helper functions
     template<typename Derived>
     void ReduceMod(Eigen::MatrixBase<Derived> &A, int modulus) {
+        // Reduces matrix modulo "modulus," and ensures entries are all nonnegative
         assert(modulus > 0);
         // define the mod_p as a lambda taking an int (modulo) and returning a
-        // unary lambda that computes x -> x % p;
+        // unary lambda that computes x -> x mod p \in {0,...,p-1};
         auto mod_p = [](int p) {
             // returns a unary lambda
-            return [p](int x) { return x % p; };
+            return [p](int x) { return ((x % p) + p) % p; };
         };
         A = A.unaryExpr(mod_p(modulus));
     }

@@ -19,36 +19,24 @@ namespace stab {
     }
 
 // Subroutines:
-    void AffineState::ReduceGramRowCol(int c) { // TODO: Optimize
-        Q_(c, c) = (4 + Q_(c, c) % 4) % 4;
-        for (int i = 0; i < Q_.cols(); i++) {
-            if (i != c) {
-                Q_(c, i) = (2 + Q_(c, i) % 2) % 2;
-                Q_(i, c) = (2 + Q_(i, c) % 2) % 2;
-            }
-        }
+    void AffineState::ReduceGramRowCol(int c) {
+        int new_qcc = (4 + Q_(c, c) % 4) % 4; // Need to store this since it gets reduced mod 2 below
+        ReduceMod(Q_.row(c), 2);
+        ReduceMod(Q_.col(c), 2);
+        Q_(c, c) = new_qcc;
     }
 
     void AffineState::ReindexSubtColumn(int k, int c) {
         // Applies the update Column k of A <--- Column k - Column c
         if (c != k) {
-            for (int j = 0; j < n_; j++) {
-                A_(j, k) = (A_(j, k) + A_(j, c)) % 2;
-            }
+            A_.col(k) += A_.col(c);
+            ReduceMod(A_.col(k), 2);
+            
             int qcc = Q_(c, c);
-            for (int h = 0; h < Q_.cols(); h++) {
-                if (Q_(h, c) != 0) {
-                    //Q_(h, k) -= Q_(h, c);
-                    Q_(h, k) += Q_(h, c); // TODO: Check whether +/- is correct
-                }
-                if (Q_(c, h) != 0) {
-                    //Q_(k, h) -= Q_(c, h);
-                    Q_(k, h) += Q_(c, h); // TODO: Check whether +/- is correct
-                }
-            }
-            Q_(k, k) += qcc; // TODO: Check whether correct
+            Q_.col(k) -= Q_.col(c);
+            Q_.row(k) -= Q_.row(c);
+            Q_(k, k) += qcc;
             ReduceGramRowCol(k);
-            ReduceQ();
         }
     }
 
@@ -103,11 +91,13 @@ namespace stab {
         Q_.conservativeResize(r_ - 1, r_ - 1);
 
         // Step 3:
-        Q_ += 2 * z * q.asDiagonal();
-        ReduceQ(); // TODO: Only need to reduce diagonal. Also guaranteed entries >= 0
-        b_ += z * a;
-        ReduceMod(b_, 2);
-        phase_ = (phase_ + 2 * z * u) % 8;
+        if (z == 1) { // ReduceMod is relatively expensive, so it makes sense to check whether z == 1
+            Q_ += 2 * q.asDiagonal();
+            ReduceMod(Q_.diagonal(), 4);
+            b_ += a;
+            ReduceMod(b_, 2);
+            phase_ = (phase_ + 2 * u) % 8;
+        }
 
         // Step 4:
         pivots_.erase(r_ - 1);
@@ -162,7 +152,6 @@ namespace stab {
 
 // GATES:
     void AffineState::H(int j) {
-        ReduceQ(); // TODO: Removing this probably is fine
 
         // Step 1: Find c.
         int c = -1; // c = -1 will indicate that row j is not a pivot
@@ -201,11 +190,11 @@ namespace stab {
         Q_.conservativeResize(r_ + 1, r_ + 1);
         Q_.row(r_) = atilde.transpose();
         Q_.col(r_) = atilde.transpose();
-        Q_(r_, r_) = 2 * b_(j); // Already reduced mod 4
-        ReduceQ(); // TODO: Probably unnecessary
+        Q_(r_, r_) = 2 * b_(j);
 
         // Step 6:
         b_(j) = 0;
+
         // Step 7:
         if (c > -1) { // Case 2 from Alex's notes
             ZeroColumnElim(c);
@@ -216,9 +205,9 @@ namespace stab {
 
     void AffineState::CZ(int j, int k) {
         if (A_.cols() > 0) { // If psi is a computational basis state then A_ has
-            // zero columns, so the next three lines would do nothing anyway
-            Eigen::VectorXi a_j = A_(j, Eigen::all).transpose();
-            Eigen::VectorXi a_k = A_(k, Eigen::all).transpose();
+            // zero columns, so this block would do nothing anyway
+            Eigen::VectorXi a_j = A_.row(j).transpose();
+            Eigen::VectorXi a_k = A_.row(k).transpose();
             Q_ += a_j * a_k.transpose() + a_k * a_j.transpose() +
                   2 * Eigen::MatrixXi(
                           (b_(k) * a_j.asDiagonal() + b_(j) * a_k.asDiagonal()));
@@ -234,9 +223,22 @@ namespace stab {
     }
 
     void AffineState::S(int j) {
-        Eigen::VectorXi a_j = A_(j, Eigen::all).transpose();
-        Q_ += (1 - 2 * b_(j)) * a_j * a_j.transpose();
-        ReduceQ();
+        bool is_pivot = false;
+        int pivcol;
+        for (int i = 0; i < r_; ++i) {
+            if (pivots_[i] == j) {
+                is_pivot == true;
+                pivcol = i;
+            }
+        }
+
+        if (is_pivot) {
+            Q_(pivcol, pivcol) = (Q_(pivcol, pivcol) + (1 - 2 * b_(j)) + 4) % 4;
+        } else {
+            Eigen::VectorXi a_j = A_.row(j).transpose();
+            Q_ += (1 - 2 * b_(j)) * a_j * a_j.transpose();
+            ReduceQ();
+        }
         phase_ = (phase_ + 2 * b_(j)) % 8;
     }
 
@@ -244,8 +246,8 @@ namespace stab {
 
     void AffineState::Z(int j) {
         phase_ = (phase_ + 4 * (b_(j))) % 8;
-        Q_ += 2 * Eigen::MatrixXi(A_(j, Eigen::all).asDiagonal());
-        ReduceQ();
+        Q_.diagonal() += 2 * A_.row(j);
+        ReduceMod(Q_.diagonal(), 4);
     }
 
     void AffineState::Y(int j) {
@@ -256,7 +258,7 @@ namespace stab {
 
     int AffineState::MeasureZ(int j) {
         // Check whether deterministic:
-        if (A_(j, Eigen::all).isZero()) {
+        if (A_.row(j).isZero()) {
             return b_(j);
         } else {
             int beta = random_bit();
@@ -281,17 +283,12 @@ namespace stab {
         }
     }
 
-    void AffineState::ReduceQ() { // TODO: Optimize
-        // Need to reduce off-diagonal elements modulo 2 and diagonal elements
-        // modulo 4
-        /*std::cout << "Reducing Q..." << std::endl << std::endl;
-        std::cout << "Q = " << std::endl << Q_ << std::endl;*/
-        Eigen::MatrixXi Qdiag = Q_.diagonal().asDiagonal();
-        Q_ = Q_ - Qdiag;
+    void AffineState::ReduceQ() {
+        // Reduces Q mod 4 on the diagonal and mod 2 elsewhere
+        Eigen::VectorXi qdiag = Q_.diagonal();
         ReduceMod(Q_, 2);
-        ReduceMod(Qdiag, 4);
-        Q_ += Qdiag;
-        /*std::cout << "Now, Q = " << std::endl << Q_ << std::endl;*/
+        ReduceMod(qdiag, 4);
+        Q_.diagonal() = qdiag;
     }
 
     std::ostream &operator<<(std::ostream &out, AffineState const &psi) {
