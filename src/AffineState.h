@@ -2,6 +2,7 @@
 #define AFFINE_STATE_H_
 
 #include <Eigen/Dense>
+#include <cassert>
 #include <iostream>
 #include <vector>
 #include <map>
@@ -76,12 +77,20 @@ namespace stab {
 
         void print() const; // Only used for printing state at intermediate stages
         // of the calculation when diagnosing errors
-    };
+    }; // class AffineState
 
 // Small helper functions. Not sure if this is the best place to declare them?
-    void ReduceMatrixMod(Eigen::MatrixXi &M, int modulus);
-
-    void ReduceVectorMod(Eigen::VectorXi &v, int modulus);
+    template<typename Derived>
+    void ReduceMod(Eigen::MatrixBase<Derived> &A, int modulus) {
+        assert(modulus > 0);
+        // define the mod_p as a lambda taking an int (modulo) and returning a
+        // unary lambda that computes x -> x % p;
+        auto mod_p = [](int p) {
+            // returns a unary lambda
+            return [p](int x) { return x % p; };
+        };
+        A = A.unaryExpr(mod_p(modulus));
+    }
 } // namespace stab
 
 #endif // AFFINE_STATE_H_

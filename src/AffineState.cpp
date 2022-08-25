@@ -118,7 +118,7 @@ namespace stab {
         Eigen::VectorXi a = A_(Eigen::all, r_ - 1); // r_ - 1 because of 0-indexing
         Eigen::VectorXi q;
         if (r_ > 1) { // If r == 1 then the line below throws an error due to r_ - 2
-            q = Q_(Eigen::seq(0, r_ - 2), r_ - 1); 
+            q = Q_(Eigen::seq(0, r_ - 2), r_ - 1);
         }
         int u = Q_(r_ - 1, r_ - 1) % 4;
         // Step 2:
@@ -129,7 +129,7 @@ namespace stab {
         Q_ += 2 * z * q.asDiagonal();
         ReduceQ(); // TODO: Possibly unnecessary
         b_ += z * a;
-        ReduceVectorMod(b_, 2);
+        ReduceMod(b_, 2);
         phase_ = (phase_ + 2 * z * u) % 8;
 
         // Step 4:
@@ -195,7 +195,7 @@ namespace stab {
                 break;
             }
         }
-        
+
         // Step 2. (Using -1 instead of 0 because of 0-indexing.)
         if (c > -1) {
             ReselectPrincipalRow(j, c);
@@ -304,22 +304,6 @@ namespace stab {
         }
     }
 
-    void ReduceMatrixMod(Eigen::MatrixXi &M,
-                         int modulus) { // TODO: This is a really silly way of doing
-        // it. Should find something better
-        M = M.array() - (modulus * (M.array() / modulus));
-        M = M.array() + modulus;
-        M = M.array() - (modulus * (M.array() / modulus));
-    }
-
-    void ReduceVectorMod(Eigen::VectorXi &v,
-                         int modulus) { // TODO: This is a really silly way of doing
-        // it. Should find something better
-        v = v.array() - (modulus * (v.array() / modulus));
-        v = v.array() + modulus;
-        v = v.array() - (modulus * (v.array() / modulus));
-    }
-
     void AffineState::ReduceQ() { // TODO: Optimize
         // Need to reduce off-diagonal elements modulo 2 and diagonal elements
         // modulo 4
@@ -327,8 +311,8 @@ namespace stab {
         std::cout << "Q = " << std::endl << Q_ << std::endl;*/
         Eigen::MatrixXi Qdiag = Q_.diagonal().asDiagonal();
         Q_ = Q_ - Qdiag;
-        ReduceMatrixMod(Q_, 2);
-        ReduceMatrixMod(Qdiag, 4);
+        ReduceMod(Q_, 2);
+        ReduceMod(Qdiag, 4);
         Q_ += Qdiag;
         /*std::cout << "Now, Q = " << std::endl << Q_ << std::endl;*/
     }
@@ -365,7 +349,7 @@ namespace stab {
                 }
 
                 Eigen::VectorXi ket = A_ * x + b_;
-                ReduceVectorMod(ket, 2);
+                ReduceMod(ket, 2);
                 std::string rel_phase;
                 switch ((x.transpose() * Q_ * x) % 4) {
                     case 0:
@@ -385,8 +369,8 @@ namespace stab {
                 }
 
                 std::cout << rel_phase << "|" << ket.transpose() << ">\n";
-            }       
-        }        
+            }
+        }
     }
 
 } // namespace stab
