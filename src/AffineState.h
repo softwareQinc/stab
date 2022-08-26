@@ -17,6 +17,7 @@ namespace stab {
         // Gates and measurements
         void CZ(int a, int b);
         void CX(int a, int b);
+        void SWAP(int a, int b);
         void S(int j);
         void H(int a);
         void X(int j);

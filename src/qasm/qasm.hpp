@@ -161,16 +161,16 @@ class QASMSimulator final : public ast::Visitor {
                 psi.Z(i);
             }
         } /*Now two-qubit gates*/ else if (dgate.name() == "cx") {
-            for (int x : id1) {
-                for (int y : id2) {
-                    psi.CX(x, y);
-                }
+            for (size_t i = 0; i < id1.size(); ++i) {
+                psi.CX(id1[i], id2[i]);
             }
         } else if (dgate.name() == "cz") {
-            for (int x : id1) {
-                for (int y : id2) {
-                    psi.CZ(x, y);
-                }
+            for (size_t i = 0; i < id1.size(); ++i) {
+                psi.CZ(id1[i], id2[i]);
+            }
+        } else if (dgate.name() == "swap") {
+            for (size_t i = 0; i < id1.size(); ++i) {
+                psi.SWAP(id1[i], id2[i]);
             }
         } /*Otherwise it's some other unsupported gate*/ else {
             throw std::logic_error("Not supported");

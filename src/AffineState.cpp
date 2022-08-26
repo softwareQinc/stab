@@ -222,6 +222,12 @@ namespace stab {
         H(k);
     }
 
+    void AffineState::SWAP(int j, int k) {// TODO: Use non-naive method
+        CX(j, k);
+        CX(k, j);
+        CX(j, k);
+    }
+
     void AffineState::S(int j) {
         bool is_pivot = false;
         int pivcol;
