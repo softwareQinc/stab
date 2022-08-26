@@ -216,16 +216,28 @@ namespace stab {
         phase_ = (phase_ + 4 * b_(j) * b_(k)) % 8;
     }
 
-    void AffineState::CX(int j, int k) { // TODO: Use non-naive method.
-        H(k);
-        CZ(j, k);
-        H(k);
+    void AffineState::CX(int h, int j) {
+        int c = -1;
+        for (int cc = 0; cc < r_; ++cc) {
+            if (pivots_[cc] == j) {
+                c = cc;
+                break;
+            }
+        }
+
+        A_.row(j) += A_.row(h);
+        ReduceMod(A_.row(j), 2);
+
+        b_(j) = (b_(j) + b_(h)) % 2;
+
+        if (c != -1) {
+            ReselectPrincipalRow(0, c);
+        }
     }
 
-    void AffineState::SWAP(int j, int k) {// TODO: Use non-naive method
-        CX(j, k);
-        CX(k, j);
-        CX(j, k);
+    void AffineState::SWAP(int j, int k) {
+        A_.row(j).swap(A_.row(k));
+        b_.row(j).swap(b_.row(k));
     }
 
     void AffineState::S(int j) {
