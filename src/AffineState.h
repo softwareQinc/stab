@@ -16,13 +16,19 @@ namespace stab {
 
         // Gates and measurements
         void CZ(int a, int b);
+
         void CX(int a, int b);
         void SWAP(int a, int b);
         void S(int j);
+
         void H(int a);
+
         void X(int j);
+
         void Y(int j);
+
         void Z(int j);
+
         int MeasureZ(int j); // Returns outcome and updates state
         void Reset(int j); // Resets qubit j to |0>
 
@@ -37,9 +43,9 @@ namespace stab {
         // has rank r_ <= n_.
         int n_;     // number of qubits
         int phase_; // global phase_ is exp(i*pi*phase_/8)
-        Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> Q_;
-        Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> A_;
-        Eigen::Vector<int, Eigen::Dynamic> b_;
+        Eigen::MatrixXi Q_;
+        Eigen::MatrixXi A_;
+        Eigen::VectorXi b_;
         std::map<int, int>
                 pivots_; // AKA "principal index map." Keys are columns, values are the
         // rows that contain pivots_ in those columns. Note that we are
@@ -72,9 +78,13 @@ namespace stab {
         // of the calculation when diagnosing errors
     }; // class AffineState
 
-// Small helper functions
     template<typename Derived>
-    void ReduceMod(Eigen::MatrixBase<Derived> &A, int modulus) {
+    using expr_t =
+            typename std::decay<decltype(std::declval<Derived>().eval())>::type;
+
+    // Small helper functions
+    template<typename Derived>
+    [[nodiscard]] expr_t<Derived> ReduceMod(const Eigen::MatrixBase<Derived> &A, int modulus) {
         // Reduces matrix modulo "modulus," and ensures entries are all nonnegative
         assert(modulus > 0);
         // define the mod_p as a lambda taking an int (modulo) and returning a
@@ -83,7 +93,7 @@ namespace stab {
             // returns a unary lambda
             return [p](int x) { return ((x % p) + p) % p; };
         };
-        A = A.unaryExpr(mod_p(modulus));
+        return A.unaryExpr(mod_p(modulus));
     }
 } // namespace stab
 

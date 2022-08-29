@@ -21,20 +21,21 @@ namespace stab {
 // Subroutines:
     void AffineState::ReduceGramRowCol(int c) {
         int new_qcc = (4 + Q_(c, c) % 4) % 4; // Need to store this since it gets reduced mod 2 below
-        ReduceMod(Q_.row(c), 2);
-        ReduceMod(Q_.col(c), 2);
+        Q_.row(c) = ReduceMod(Q_.row(c), 2);
+        Q_.col(c) = ReduceMod(Q_.col(c), 2);
         Q_(c, c) = new_qcc;
     }
 
     void AffineState::ReindexSubtColumn(int k, int c) {
         // Applies the update Column k of A <--- Column k - Column c
-        assert(c != k);
+        assert(c!=k);
         A_.col(k) += A_.col(c);
-        ReduceMod(A_.col(k), 2);
-            
-        int qcc = Q_(c, c);
+        A_.col(k) = ReduceMod(A_.col(k), 2);
+
+        //int qcc = Q_(c, c);
         Q_.col(k) -= Q_.col(c);
         Q_.row(k) -= Q_.row(c);
+        //Q_(k, k) += qcc;
         ReduceGramRowCol(k);
     }
 
@@ -91,9 +92,9 @@ namespace stab {
         // Step 3:
         if (z == 1) { // ReduceMod is relatively expensive, so it makes sense to check whether z == 1
             Q_ += 2 * q.asDiagonal();
-            ReduceMod(Q_.diagonal(), 4);
+            Q_.diagonal() = ReduceMod(Q_.diagonal(), 4);
             b_ += a;
-            ReduceMod(b_, 2);
+            b_ = ReduceMod(b_, 2);
             phase_ = (phase_ + 2 * u) % 8;
         }
 
@@ -286,7 +287,7 @@ namespace stab {
     void AffineState::Z(int j) {
         phase_ = (phase_ + 4 * (b_(j))) % 8;
         Q_.diagonal() += 2 * A_.row(j);
-        ReduceMod(Q_.diagonal(), 4);
+        Q_.diagonal() = ReduceMod(Q_.diagonal(), 4);
     }
 
     void AffineState::Y(int j) {
@@ -324,10 +325,8 @@ namespace stab {
 
     void AffineState::ReduceQ() {
         // Reduces Q mod 4 on the diagonal and mod 2 elsewhere
-        Eigen::VectorXi qdiag = Q_.diagonal();
-        ReduceMod(Q_, 2);
-        ReduceMod(qdiag, 4);
-        Q_.diagonal() = qdiag;
+        Q_ = ReduceMod(Q_, 2);
+        Q_.diagonal() = ReduceMod(Q_.diagonal(), 4);
     }
 
     std::ostream &operator<<(std::ostream &out, AffineState const &psi) {
@@ -359,7 +358,7 @@ namespace stab {
                 }
 
                 Eigen::VectorXi ket = A_ * x + b_;
-                ReduceMod(ket, 2);
+                ket = ReduceMod(ket, 2);
                 std::string rel_phase;
                 switch ((x.transpose() * Q_ * x) % 4) {
                     case 0:
@@ -382,5 +381,4 @@ namespace stab {
             }
         }
     }
-
 } // namespace stab
