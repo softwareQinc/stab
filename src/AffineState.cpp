@@ -28,16 +28,14 @@ namespace stab {
 
     void AffineState::ReindexSubtColumn(int k, int c) {
         // Applies the update Column k of A <--- Column k - Column c
-        if (c != k) {
-            A_.col(k) += A_.col(c);
-            ReduceMod(A_.col(k), 2);
+        assert(c != k);
+        A_.col(k) += A_.col(c);
+        ReduceMod(A_.col(k), 2);
             
-            int qcc = Q_(c, c);
-            Q_.col(k) -= Q_.col(c);
-            Q_.row(k) -= Q_.row(c);
-            Q_(k, k) += qcc;
-            ReduceGramRowCol(k);
-        }
+        int qcc = Q_(c, c);
+        Q_.col(k) -= Q_.col(c);
+        Q_.row(k) -= Q_.row(c);
+        ReduceGramRowCol(k);
     }
 
     void AffineState::ReindexSwapColumns(int k, int c) {
@@ -63,7 +61,7 @@ namespace stab {
         int j_star = -1; // Equivalent to j_star = 0 in the paper (but we need to
         // use -1 because of 0-indexing)
         for (int jj = 0; jj < A_.cols();
-             jj++) { //TODO: Choose optimal j_star (see paper)
+             ++jj) { //TODO: Choose optimal j_star (see paper)
             if (A_(jj, c) != 0 && jj != j) {
                 j_star = jj;
                 break;
@@ -217,21 +215,44 @@ namespace stab {
     }
 
     void AffineState::CX(int h, int j) {
-        int c = -1;
-        for (int cc = 0; cc < r_; ++cc) {
-            if (pivots_[cc] == j) {
-                c = cc;
-                break;
+        for (int i = 0; i < A_.cols(); ++i) {
+            if (A_.col(i).isZero()) {
+               std::cout << "Zero column entering CX subroutine\n";
+               print();
             }
         }
 
-        A_.row(j) += A_.row(h);
-        ReduceMod(A_.row(j), 2);
+        H(j);
+        CZ(h, j);
+        H(j);
 
-        b_(j) = (b_(j) + b_(h)) % 2;
+        //// Step 1:
+        //int c = -1;
+        //for (int cc = 0; cc < r_; ++cc) {
+        //    if (pivots_[cc] == j) {
+        //        c = cc;
+        //        break;
+        //    }
+        //}
 
-        if (c != -1) {
-            ReselectPrincipalRow(0, c);
+        //// Step 2:
+        //A_.row(j) += A_.row(h);
+        //ReduceMod(A_.row(j), 2);
+
+        //// Step 3:
+        //b_(j) = (b_(j) + b_(h)) % 2;
+
+        //// Step 4:
+        //if (c != -1) {
+        //    ReselectPrincipalRow(-1, c);
+        //}
+
+        for (int i = 0; i < A_.cols(); ++i) {
+            if (A_.col(i).isZero()) {
+                std::cout << "Zero column exiting CX on " << h << ", " << j
+                          << "\n";
+                print();
+            }
         }
     }
 
@@ -245,7 +266,7 @@ namespace stab {
         int pivcol;
         for (int i = 0; i < r_; ++i) {
             if (pivots_[i] == j) {
-                is_pivot == true;
+                is_pivot = true;
                 pivcol = i;
             }
         }

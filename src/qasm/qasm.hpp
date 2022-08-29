@@ -116,12 +116,12 @@ class QASMSimulator final : public ast::Visitor {
     }
 
     void visit(ast::IfStmt& stmt) override {
-        throw std::logic_error("Not supported");
+        throw std::logic_error("If statements are not supported");
     }
 
     // Gates
     void visit(ast::UGate& gate) override {
-        throw std::logic_error("Not supported");
+        throw std::logic_error("Custom U-gates are not supported");
     }
 
     void visit(ast::CNOTGate& gate) override {
@@ -134,10 +134,13 @@ class QASMSimulator final : public ast::Visitor {
         // First, get qubit ids.
         std::vector<int> id1 = get_ids(dgate.qarg(0));
         std::vector<int> id2; // Only needed for two-qubit gates:
-        if (dgate.name() == "cx" || dgate.name() == "cz") {
+        if (dgate.name() == "cx" || dgate.name() == "cz" ||
+            dgate.name() == "swap") {
             id2 = get_ids(dgate.qarg(1));
         }
-        
+        int s1 = id1.size();
+        int s2 = id2.size();
+
         // Now apply the gates.
         // One-qubit gates:
         if (dgate.name() == "h") {
@@ -161,19 +164,43 @@ class QASMSimulator final : public ast::Visitor {
                 psi.Z(i);
             }
         } /*Now two-qubit gates*/ else if (dgate.name() == "cx") {
-            for (size_t i = 0; i < id1.size(); ++i) {
-                psi.CX(id1[i], id2[i]);
+            if (s1 == 1 && s2 == 1) {
+                psi.CX(id1[0], id2[0]);
+            } else if (s1 == 1) {
+                for (int i : id2) {
+                    psi.CX(id1[0], i);
+                }
+            } else if (s2 == 1) {
+                for (int i : id1) {
+                    psi.CX(i, id2[0]);
+                }
+            } else {
+                for (size_t i = 0; i < s1; ++i) {
+                    psi.CX(id1[i], id2[i]);
+                }
             }
         } else if (dgate.name() == "cz") {
-            for (size_t i = 0; i < id1.size(); ++i) {
-                psi.CZ(id1[i], id2[i]);
+            if (s1 == 1 && s2 == 1) {
+                psi.CZ(id1[0], id2[0]);
+            } else if (s1 == 1) {
+                for (size_t i = 0; i < s2; ++i) {
+                    psi.CZ(id1[0], id2[i]);
+                }
+            } else if (s2 == 1) {
+                for (size_t i = 0; i < s1; ++i) {
+                    psi.CZ(id1[i], id2[0]);
+                }
+            } else {
+                for (size_t i = 0; i < s1; ++i) {
+                    psi.CZ(id1[i], id2[i]);
+                }
             }
         } else if (dgate.name() == "swap") {
             for (size_t i = 0; i < id1.size(); ++i) {
                 psi.SWAP(id1[i], id2[i]);
             }
         } /*Otherwise it's some other unsupported gate*/ else {
-            throw std::logic_error("Not supported");
+            throw std::logic_error("Gate must be one of {x, y, z, h, s, cx, cz, swap}.");
         }
         return;
     }
@@ -184,7 +211,7 @@ class QASMSimulator final : public ast::Visitor {
     }
 
     void visit(ast::OracleDecl& decl) override {
-        throw std::logic_error("Not supported");
+        throw std::logic_error("Oracles are not supported");
     }
 
     void visit(ast::AncillaDecl& decl) override {
