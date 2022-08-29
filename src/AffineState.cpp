@@ -341,18 +341,4 @@ namespace stab {
             }
         }
     }
-
-    // Small helper functions
-    [[nodiscard]] Eigen::MatrixXi ReduceMod(const Eigen::MatrixXi &A, int modulus) {
-        // Reduces matrix modulo "modulus," and ensures entries are all nonnegative
-        assert(modulus > 0);
-        // define the mod_p as a lambda taking an int (modulo) and returning a
-        // unary lambda that computes x -> x mod p \in {0,...,p-1};
-        auto mod_p = [](int p) {
-            // returns a unary lambda
-            return [p](int x) { return ((x % p) + p) % p; };
-        };
-        return A.unaryExpr(mod_p(modulus));
-    }
-
 } // namespace stab
