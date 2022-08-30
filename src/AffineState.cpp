@@ -40,17 +40,16 @@ namespace stab {
     }
 
     void AffineState::ReindexSwapColumns(int k, int c) {
-        if (c != k) {
-            A_.col(k).swap(A_.col(c));
-            Q_.col(k).swap(Q_.col(c));
-            Q_.row(k).swap(Q_.row(c));
-            std::swap(pivots_.at(k), pivots_.at(c));
-        }
+        assert(c != k);
+        A_.col(k).swap(A_.col(c));
+        Q_.col(k).swap(Q_.col(c));
+        Q_.row(k).swap(Q_.row(c));
+        std::swap(pivots_.at(k), pivots_.at(c));
     }
 
     void AffineState::MakePrincipal(int c, int j) {
         assert(A_(j, c) != 0);
-        for (int k = 0; k < r_; k++) {
+        for (int k = 0; k < r_; ++k) {
             if (k != c && A_(j, k) != 0) {
                 ReindexSubtColumn(k, c);
             }
@@ -71,14 +70,13 @@ namespace stab {
         if (j_star != -1) {
             MakePrincipal(c, j_star);
         } // (else, do nothing since reselecting row is impossible)
-        return;
     }
 
     void AffineState::FixFinalBit(int z) {
         assert(r_ > 0);
 
         // Step 1:
-        Eigen::VectorXi a = A_(Eigen::all, r_ - 1); // r_ - 1 because of 0-indexing
+        Eigen::VectorXi a = A_.col(r_ - 1); // r_ - 1 because of 0-indexing
         Eigen::VectorXi q;
         if (r_ > 1) { // If r == 1 then the line below throws an error due to r_ - 2
             q = Q_(Eigen::seq(0, r_ - 2), r_ - 1);
@@ -91,7 +89,8 @@ namespace stab {
 
         // Step 3:
         if (z == 1) { // ReduceMod is relatively expensive, so it makes sense to check whether z == 1
-            Q_ += 2 * q.asDiagonal();
+            Q_.diagonal() += 2 * q;
+            //Q_ += 2 * q.asDiagonal(); TODO: Probably fine to remove this
             Q_.diagonal() = ReduceMod(Q_.diagonal(), 4);
             b_ += a;
             b_ = ReduceMod(b_, 2);
@@ -101,8 +100,6 @@ namespace stab {
         // Step 4:
         pivots_.erase(r_ - 1);
         --r_;
-
-        return;
     }
 
     void AffineState::ZeroColumnElim(int c) {
@@ -110,10 +107,13 @@ namespace stab {
 
         // Step 1:
         ReindexSwapColumns(c, r_); // Use r_ instead of r_+1 here because of 0-indexing
+        std::cout << "ReindexSwapColumns yields:\n" << *this;
 
         // Step 2:
         Eigen::VectorXi q = Q_(Eigen::seq(0, r_ - 1), r_); // Step 2.
         int u = Q_(r_, r_) % 4;
+        std::cout << "Vector q =\n" << q << "\n";
+        std::cout << "Scalar u =\n" << u << "\n";
 
         // Step 3:
         A_.conservativeResize(Eigen::NoChange, r_); // A^(2) from paper
@@ -124,20 +124,22 @@ namespace stab {
 
         // Step 4
         if (u % 2 == 1) {
-            Q_ += (2 - u) * q * q.transpose(); // TODO: Confirm that the "u-2" from the paper is an error
+            std::cout << "u is odd\n";
+            Q_ += (u-2) * q * q.transpose(); // TODO: I believe that u-2 is correct, in agreement with the paper, but contrary to my email with the authors.
             ReduceQ();
             phase_ = (phase_ - u + 2) % 8;
             return;
-        } else {
+        } else { // u is even
+            assert(!q.isZero());
             // TODO: Check whether q == \vec{0}? For now assume not
             int ell;
-            for (int i = 0; i < r_; i++) {
+            for (int i = 0; i < r_; ++i) {
                 if (q(i) != 0) {
-                    ell = i; // Because q is guaranteed to be nonzero, we are guaranteed to initialize ell eventually
+                    ell = i;
                     break;
                 }
             }
-            for (int k = 0; k < r_; k++) {
+            for (int k = 0; k < r_; ++k) {
                 if (q(k) != 0 && k != ell) {
                     ReindexSubtColumn(k, ell);
                 }
@@ -145,16 +147,14 @@ namespace stab {
             ReindexSwapColumns(r_ - 1, ell); // r_-1 because of 0-indexing. This step also produces A^(3) and Q^(3)
             // At this point, A_ and Q_ should have r_ columns each. Also, since we removed the zero column in Step 3, the rank of A_ should be r_
             FixFinalBit(u / 2);
-            return;
         }
     }
 
 // GATES:
     void AffineState::H(int j) {
-
         // Step 1: Find c.
         int c = -1; // c = -1 will indicate that row j is not a pivot
-        for (int column_i = 0; column_i < r_; column_i++) {
+        for (int column_i = 0; column_i < r_; ++column_i) {
             if (pivots_[column_i] == j) {
                 c = column_i;
                 break;
@@ -172,18 +172,15 @@ namespace stab {
         // Step 3:
         Eigen::VectorXi atilde;
         atilde.setZero(r_ + 1);
-        atilde(Eigen::seq(0, r_ - 1)) =
-                A_(j, Eigen::all)
-                        .transpose(); // Set atilde = [row j of A_ | 0 ]^T \in \{0,1\}^{r+1}
+        atilde(Eigen::seq(0, r_ - 1)) = A_.row(j).transpose();
 
         // Step 4:
         A_.row(j).setZero();
-        A_.conservativeResize(
-                Eigen::NoChange,
-                r_ + 1); // Add column, and (next two lines) set new column to e_j
+        A_.conservativeResize(Eigen::NoChange, r_ + 1);
         A_.col(r_).setZero();
         A_(j, r_) = 1;
         pivots_[r_] = j;
+
 
         // Step 5:
         Q_.conservativeResize(r_ + 1, r_ + 1);
@@ -196,6 +193,8 @@ namespace stab {
 
         // Step 7:
         if (c > -1) { // Case 2 from Alex's notes
+            std::cout << "\n\nEntering ZeroColumnElim(c) with c = " << c << " and state:\n";
+            print();
             ZeroColumnElim(c);
         } else { // Case 1 from Alex's notes
             ++r_;
@@ -203,81 +202,84 @@ namespace stab {
     }
 
     void AffineState::CZ(int j, int k) {
-        if (A_.cols() > 0) { // If psi is a computational basis state then A_ has
+        if (r_ > 0) { // If psi is a computational basis state then A_ has
             // zero columns, so this block would do nothing anyway
             Eigen::VectorXi a_j = A_.row(j).transpose();
             Eigen::VectorXi a_k = A_.row(k).transpose();
-            Q_ += a_j * a_k.transpose() + a_k * a_j.transpose() +
-                  2 * Eigen::MatrixXi(
-                          (b_(k) * a_j.asDiagonal() + b_(j) * a_k.asDiagonal()));
+            Q_ += a_j * a_k.transpose() + a_k * a_j.transpose();
+            Q_.diagonal() += 2 * b_(k) * a_j;
+            Q_.diagonal() += 2 * b_(j) * a_k;
             ReduceQ();
         }
         phase_ = (phase_ + 4 * b_(j) * b_(k)) % 8;
     }
 
     void AffineState::CX(int h, int j) {
-        for (int i = 0; i < A_.cols(); ++i) {
-            if (A_.col(i).isZero()) {
-               std::cout << "Zero column entering CX subroutine\n";
-               print();
+       /* H(j);
+        CZ(h, j);
+        H(j);*/
+
+        // Step 1:
+        int c = -1;
+        for (int cc = 0; cc < r_; ++cc) {
+            if (pivots_[cc] == j) {
+                c = cc;
+                break;
             }
         }
 
-        H(j);
-        CZ(h, j);
-        H(j);
+        // Step 2:
+        A_.row(j) += A_.row(h);
+        A_.row(j) = ReduceMod(A_.row(j), 2);
 
-        //// Step 1:
-        //int c = -1;
-        //for (int cc = 0; cc < r_; ++cc) {
-        //    if (pivots_[cc] == j) {
-        //        c = cc;
-        //        break;
-        //    }
-        //}
+        // Step 3:
+        b_(j) = (b_(j) + b_(h)) % 2;
 
-        //// Step 2:
-        //A_.row(j) += A_.row(h);
-        //ReduceMod(A_.row(j), 2);
-
-        //// Step 3:
-        //b_(j) = (b_(j) + b_(h)) % 2;
-
-        //// Step 4:
-        //if (c != -1) {
-        //    ReselectPrincipalRow(-1, c);
-        //}
-
-        for (int i = 0; i < A_.cols(); ++i) {
-            if (A_.col(i).isZero()) {
-                std::cout << "Zero column exiting CX on " << h << ", " << j
-                          << "\n";
-                print();
-            }
+        // Step 4:
+        if (c != -1) {
+            ReselectPrincipalRow(-1, c);
         }
     }
 
     void AffineState::SWAP(int j, int k) {
+        // TODO: Probably better way to update pivots_
         A_.row(j).swap(A_.row(k));
         b_.row(j).swap(b_.row(k));
+        int cskip = -1;
+        for (int c = 0; c < r_; ++c) {
+            if (pivots_[c] == j) {
+                pivots_[c] = k;
+                cskip = c;
+                break;
+            }
+        }
+        for (int c = 0; c < r_; ++c) {
+            if (pivots_[c] == k  && c != cskip) {
+                pivots_[c] = j;
+                break;
+            }
+        }
     }
 
     void AffineState::S(int j) {
-        bool is_pivot = false;
-        int pivcol;
-        for (int i = 0; i < r_; ++i) {
-            if (pivots_[i] == j) {
-                is_pivot = true;
-                pivcol = i;
+        if (r_ > 0) {
+            bool is_pivot = false;
+            int pivcol;
+            for (int i = 0; i < r_; ++i) {
+                if (pivots_[i] == j) {
+                    is_pivot = true;
+                    pivcol = i;
+                }
             }
-        }
 
-        if (is_pivot) {
-            Q_(pivcol, pivcol) = (Q_(pivcol, pivcol) + (1 - 2 * b_(j)) + 4) % 4;
-        } else {
-            Eigen::VectorXi a_j = A_.row(j).transpose();
-            Q_ += (1 - 2 * b_(j)) * a_j * a_j.transpose();
-            ReduceQ();
+            if (is_pivot) {
+                Q_(pivcol, pivcol) =
+                    (Q_(pivcol, pivcol) + (1 - 2 * b_(j)) + 4) % 4;
+            } else {
+                Eigen::VectorXi a_j = A_.row(j).transpose();
+                Q_ += (1 - 2 * b_(j)) * a_j * a_j.transpose();
+                ReduceQ();
+            }
         }
         phase_ = (phase_ + 2 * b_(j)) % 8;
     }
@@ -325,19 +327,47 @@ namespace stab {
 
     void AffineState::ReduceQ() {
         // Reduces Q mod 4 on the diagonal and mod 2 elsewhere
+        Eigen::VectorXi qdiag = Q_.diagonal();
+        qdiag = ReduceMod(qdiag, 4);
         Q_ = ReduceMod(Q_, 2);
-        Q_.diagonal() = ReduceMod(Q_.diagonal(), 4);
+        Q_.diagonal() = qdiag;
     }
 
     std::ostream &operator<<(std::ostream &out, AffineState const &psi) {
         out << "STATE IS GIVEN BY: \n";
         //out << "n = " << psi.n_ << '\n';
-        out << "phase = exp(" << psi.phase_ << "*i*pi/8)\n";
+        out << "phase = exp(" << psi.phase_ << "*i*pi/4)\n";
         if (psi.r_ > 0) { // If psi is a computational basis state, no need to print this stuff
             out << "Q = " << std::endl << psi.Q_ << '\n';
             out << "A = " << std::endl << psi.A_ << '\n';
         }
         out << "b^T = " << psi.b_.transpose() << '\n';
+        out << "pivots = ";
+        for (auto p : psi.pivots_) {
+            out << "(" << p.first << ", " << p.second << "), ";
+        }
+
+        //// Very naive way of printing the state, but this will mainly be used
+        //// for debugging. We can always optimize it later if it's important.
+        //if (psi.r_ > 15) {
+        //    std::cout << "Too many amplitudes to print\n";
+        //} else {
+        //    Eigen::VectorXi x;
+        //    x.setZero(psi.r_);
+        //    for (int i = 0; i < pow(2, psi.r_); ++i) {
+        //        std::bitset<16> bs(i);         // Get binary string
+        //        for (int j = 0; j < psi.r_; ++j) { // Cast binary string to x
+        //            x(j) = int(bs[j]);
+        //        }
+
+        //        Eigen::VectorXi ket = psi.A_ * x + psi.b_;
+        //        ket = ReduceMod(ket, 2);
+        //        std::string rel_phase;
+        //        int ampl = (2 * (x.transpose() * psi.Q_ * x)[0] + psi.phase_)%8;
+        //        out << ampl << "...|" << ket.transpose()
+        //            << ">\n";
+        //    }
+        //}
         return out;
     }
 
@@ -348,7 +378,7 @@ namespace stab {
         if (r_ > 15) {
             std::cout << "Too many amplitudes to print\n";
         } else {
-            std::cout << "Global phase exp(" << phase_ << "*i*pi/8)\n";
+            std::cout << "Global phase exp(" << phase_ << "*i*pi/4)\n";
             Eigen::VectorXi x;
             x.setZero(r_);
             for (int i = 0; i < pow(2, r_); ++i) {
