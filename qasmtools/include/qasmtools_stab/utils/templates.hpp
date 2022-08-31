@@ -1,5 +1,5 @@
 /*
- * This file is part of qasmtools.
+ * This file is part of qasmtools_stab.
  *
  * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
  *
@@ -25,13 +25,13 @@
  */
 
 /**
- * \file qasmtools/utils/templates.hpp
+ * \file qasmtools_stab/utils/templates.hpp
  * \brief Helper templates
  */
 
 #pragma once
 
-namespace qasmtools {
+namespace qasmtools_stab {
 namespace utils {
 /**
  * \brief Convenience template for variant visitors
@@ -44,4 +44,4 @@ template <class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
 } // namespace utils
-} // namespace qasmtools
+} // namespace qasmtools_stab

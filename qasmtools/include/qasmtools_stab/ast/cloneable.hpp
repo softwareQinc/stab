@@ -29,7 +29,7 @@
 
 #include <memory>
 
-namespace qasmtools {
+namespace qasmtools_stab {
 namespace ast {
 
 template <typename T>
@@ -60,4 +60,4 @@ struct cloneable {
 } // namespace object
 
 } // namespace ast
-} // namespace qasmtools
+} // namespace qasmtools_stab

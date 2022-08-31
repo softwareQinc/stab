@@ -1,5 +1,5 @@
 /*
- * This file is part of qasmtools.
+ * This file is part of qasmtools_stab.
  *
  * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
  *
@@ -25,7 +25,7 @@
  */
 
 /**
- * \file qasmtools/ast/semantic.hpp
+ * \file qasmtools_stab/ast/semantic.hpp
  * \brief Semantic analysis for syntax trees
  */
 
@@ -39,11 +39,11 @@
 #include <set>
 #include <unordered_map>
 
-namespace qasmtools {
+namespace qasmtools_stab {
 namespace ast {
 
 /**
- * \class qasmtools::ast::SemanticError
+ * \class qasmtools_stab::ast::SemanticError
  * \brief Exception class for semantic errors
  */
 class SemanticError : public std::exception {
@@ -54,13 +54,13 @@ class SemanticError : public std::exception {
 };
 
 /**
- * \class qasmtools::ast::BitType
+ * \class qasmtools_stab::ast::BitType
  * \brief Enum for types of bits
  */
 enum class BitType { Cbit, Qubit };
 
 /**
- * \struct qasmtools::ast::GateType
+ * \struct qasmtools_stab::ast::GateType
  * \brief Data struct for gate types
  */
 struct GateType {
@@ -69,7 +69,7 @@ struct GateType {
 };
 
 /**
- * \struct qasmtools::ast::RegisterType
+ * \struct qasmtools_stab::ast::RegisterType
  * \brief Data struct for register types
  */
 struct RegisterType {
@@ -78,7 +78,7 @@ struct RegisterType {
 };
 
 /**
- * \struct qasmtools::ast::RealType
+ * \struct qasmtools_stab::ast::RealType
  * \brief Empty structure denoting a real type
  */
 struct RealType {};
@@ -92,13 +92,13 @@ struct RealType {};
 using Type = std::variant<BitType, GateType, RegisterType, RealType>;
 
 /**
- * \class qasmtools::ast::SemanticChecker
+ * \class qasmtools_stab::ast::SemanticChecker
  * \brief Implementation of the semantic analysis compiler phase
- * \see qasmtools::ast::Visitor
+ * \see qasmtools_stab::ast::Visitor
  *
  * Checks for anything that could cause a run-time error -- notably,
  * type errors, invalid uniform gates, etc. Use the functional
- * interface qasmtools::ast::check_source instead.
+ * interface qasmtools_stab::ast::check_source instead.
  */
 class SemanticChecker final : public Visitor {
   public:
@@ -471,4 +471,4 @@ inline void check_source(Program& prog) {
 }
 
 } // namespace ast
-} // namespace qasmtools
+} // namespace qasmtools_stab

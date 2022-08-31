@@ -1,5 +1,5 @@
 /*
- * This file is part of qasmtools.
+ * This file is part of qasmtools_stab.
  *
  * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
  *
@@ -25,13 +25,13 @@
  */
 
 /**
- * \file qasmtools/ast/visitor.hpp
+ * \file qasmtools_stab/ast/visitor.hpp
  * \brief Visitor interface for syntax trees
  */
 
 #pragma once
 
-namespace qasmtools {
+namespace qasmtools_stab {
 namespace ast {
 
 /* Forward declarations */
@@ -56,7 +56,7 @@ class AncillaDecl;
 class Program;
 
 /**
- * \class qasmtools::ast::Visitor
+ * \class qasmtools_stab::ast::Visitor
  * \brief Base visitor interface
  *
  * Classic visitor via (virtual) double dispatch. Standard usage is to
@@ -66,7 +66,7 @@ class Program;
  * Traversal to sub-nodes is handled by the particular visitor, not the
  * node class. For a visitor that automatically handles traversal and also
  * allows picking and choosing the particular visit overloads, see
- * qasmtools::ast::Traverse.
+ * qasmtools_stab::ast::Traverse.
  */
 class Visitor {
   public:
@@ -100,4 +100,4 @@ class Visitor {
 };
 
 } // namespace ast
-} // namespace qasmtools
+} // namespace qasmtools_stab

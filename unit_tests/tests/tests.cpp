@@ -4,13 +4,21 @@
 
 #include "gtest/gtest.h"
 
+#include <qpp/qpp.h>
+
 #include <iostream>
+
 
 using namespace stab;
 
 TEST(Test1, Case1) {
     std::cout << "hello first test!\n";
-    EXPECT_EQ(0, 0);
+
+    // test that qpp is working
+    using namespace qpp;
+    ket psi = 0_ket;
+
+    EXPECT_EQ(psi, 0_ket);
 }
 
 TEST(Test1, Case2) { EXPECT_EQ(0, 0); }

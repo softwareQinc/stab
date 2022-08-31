@@ -1,5 +1,5 @@
 /*
- * This file is part of qasmtools.
+ * This file is part of qasmtools_stab.
  *
  * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
  *
@@ -27,7 +27,7 @@
  */
 
 /**
- * \file qasmtools/parser/preprocessor.hpp
+ * \file qasmtools_stab/parser/preprocessor.hpp
  * \brief Manages includes for OpenQASM parsing
  */
 
@@ -39,7 +39,7 @@
 #include <sstream>
 #include <vector>
 
-namespace qasmtools {
+namespace qasmtools_stab {
 namespace parser {
 
 #if USE_OPENQASM2_SPECS
@@ -123,9 +123,9 @@ static const std::string std_include =
 #endif
 
 /**
- * \class qasmtools::parser::Preprocessor
+ * \class qasmtools_stab::parser::Preprocessor
  * \brief OpenQASM preprocessor class
- * \see qasmtools::parser::Lexer
+ * \see qasmtools_stab::parser::Lexer
  *
  * The preprocessor acts as a wrapper around the lexer, providing a token stream
  * that matches the stream produced by explicitly inserting included code.
@@ -268,4 +268,4 @@ class Preprocessor {
 };
 
 } // namespace parser
-} // namespace qasmtools
+} // namespace qasmtools_stab

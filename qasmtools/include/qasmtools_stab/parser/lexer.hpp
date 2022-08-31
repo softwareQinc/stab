@@ -1,5 +1,5 @@
 /*
- * This file is part of qasmtools.
+ * This file is part of qasmtools_stab.
  *
  * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
  *
@@ -27,7 +27,7 @@
  */
 
 /**
- * \file qasmtools/parser/lexer.hpp
+ * \file qasmtools_stab/parser/lexer.hpp
  * \brief Lexical analysis
  */
 
@@ -38,11 +38,11 @@
 #include <cctype>
 #include <memory>
 
-namespace qasmtools {
+namespace qasmtools_stab {
 namespace parser {
 
 /**
- * \class qasmtools::parser::Lexer
+ * \class qasmtools_stab::parser::Lexer
  * \brief openPARSER lexer class
  *
  * The Lexer reads from (a shared_ptr to) an istream object given during
@@ -376,4 +376,4 @@ class Lexer {
 };
 
 } // namespace parser
-} // namespace qasmtools
+} // namespace qasmtools_stab
