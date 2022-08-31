@@ -60,6 +60,7 @@ namespace stab {
 
         void print_amplitudes();
 
+        Eigen::VectorXcd to_vec();
         // Option to print state
         friend std::ostream &operator<<(std::ostream &out, AffineState const &psi);
 
