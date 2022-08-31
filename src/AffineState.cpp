@@ -209,10 +209,6 @@ namespace stab {
     }
 
     void AffineState::CX(int h, int j) {
-       /* H(j);
-        CZ(h, j);
-        H(j);*/
-
         // Step 1:
         int c = -1;
         for (int cc = 0; cc < r_; ++cc) {
@@ -255,7 +251,10 @@ namespace stab {
         }
     }
 
-    void AffineState::S(int j) {
+    void AffineState::S_or_SDG(int j, bool dg) {
+        // dg = true means we apply S^\dagger, dg = false means we apply S
+        int sign = 1 - 2*int(dg);  // = +1 for S and -1 for S^\dagger
+
         if (r_ > 0) {
             bool is_pivot = false;
             int pivcol;
@@ -268,20 +267,19 @@ namespace stab {
 
             if (is_pivot) {
                 Q_(pivcol, pivcol) =
-                    (Q_(pivcol, pivcol) + (1 - 2 * b_(j)) + 4) % 4;
+                    (Q_(pivcol, pivcol) + sign * (1 - 2 * b_(j)) + 4) % 4;
             } else {
                 Eigen::VectorXi a_j = A_.row(j).transpose();
-                Q_ += (1 - 2 * b_(j)) * a_j * a_j.transpose();
+                Q_ += sign * (1 - 2 * b_(j)) * a_j * a_j.transpose();
                 ReduceQ();
             }
         }
-        phase_ = (phase_ + 2 * b_(j)) % 8;
+        phase_ = (phase_ + sign * 2 * b_(j)) % 8;
     }
 
-    void AffineState::SDG(int j) { // TODO: Implement natively
-        S(j);
-        Z(j);
-    }
+    void AffineState::S(int j) { S_or_SDG(j, false); }
+
+    void AffineState::SDG(int j) { S_or_SDG(j, true); }
 
     void AffineState::X(int j) { b_(j) = (b_(j) + 1) % 2; }
 

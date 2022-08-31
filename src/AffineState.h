@@ -83,6 +83,8 @@ namespace stab {
         void
         ReduceQ(); // Reduces mod 4 on the diagonal and mod 2 on the off-diagonal
 
+        void S_or_SDG(int j, bool dg);
+
         void print() const; // Only used for printing state at intermediate stages
         // of the calculation when diagnosing errors
     }; // class AffineState
