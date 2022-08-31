@@ -20,7 +20,7 @@ namespace stab {
 
 // Subroutines:
     void AffineState::ReduceGramRowCol(int c) {
-        int new_qcc = (4 + Q_(c, c) % 4) % 4; // Need to store this since it gets reduced mod 2 below
+        int new_qcc = (4 + (Q_(c, c) % 4)) % 4; // Need to store this since it gets reduced mod 2 below
         Q_.row(c) = ReduceMod(Q_.row(c), 2);
         Q_.col(c) = ReduceMod(Q_.col(c), 2);
         Q_(c, c) = new_qcc;
@@ -32,7 +32,7 @@ namespace stab {
         A_.col(k) += A_.col(c);
         A_.col(k) = ReduceMod(A_.col(k), 2);
 
-        //int qcc = Q_(c, c);
+        //int qcc = Q_(c, c); // TODO: Check this
         Q_.col(k) -= Q_.col(c);
         Q_.row(k) -= Q_.row(c);
         //Q_(k, k) += qcc;
@@ -60,7 +60,7 @@ namespace stab {
     void AffineState::ReselectPrincipalRow(int j, int c) {
         int j_star = -1; // Equivalent to j_star = 0 in the paper (but we need to
         // use -1 because of 0-indexing)
-        for (int jj = 0; jj < A_.cols();
+        for (int jj = 0; jj < n_;
              ++jj) { //TODO: Choose optimal j_star (see paper)
             if (A_(jj, c) != 0 && jj != j) {
                 j_star = jj;
@@ -107,13 +107,10 @@ namespace stab {
 
         // Step 1:
         ReindexSwapColumns(c, r_); // Use r_ instead of r_+1 here because of 0-indexing
-        std::cout << "ReindexSwapColumns yields:\n" << *this;
 
         // Step 2:
         Eigen::VectorXi q = Q_(Eigen::seq(0, r_ - 1), r_); // Step 2.
         int u = Q_(r_, r_) % 4;
-        std::cout << "Vector q =\n" << q << "\n";
-        std::cout << "Scalar u =\n" << u << "\n";
 
         // Step 3:
         A_.conservativeResize(Eigen::NoChange, r_); // A^(2) from paper
@@ -124,7 +121,6 @@ namespace stab {
 
         // Step 4
         if (u % 2 == 1) {
-            std::cout << "u is odd\n";
             Q_ += (u-2) * q * q.transpose(); // TODO: I believe that u-2 is correct, in agreement with the paper, but contrary to my email with the authors.
             ReduceQ();
             phase_ = (phase_ - u + 2) % 8;
@@ -193,8 +189,6 @@ namespace stab {
 
         // Step 7:
         if (c > -1) { // Case 2 from Alex's notes
-            std::cout << "\n\nEntering ZeroColumnElim(c) with c = " << c << " and state:\n";
-            print();
             ZeroColumnElim(c);
         } else { // Case 1 from Alex's notes
             ++r_;
@@ -284,6 +278,11 @@ namespace stab {
         phase_ = (phase_ + 2 * b_(j)) % 8;
     }
 
+    void AffineState::SDG(int j) { // TODO: Implement natively
+        S(j);
+        Z(j);
+    }
+
     void AffineState::X(int j) { b_(j) = (b_(j) + 1) % 2; }
 
     void AffineState::Z(int j) {
@@ -335,8 +334,8 @@ namespace stab {
 
     std::ostream &operator<<(std::ostream &out, AffineState const &psi) {
         out << "STATE IS GIVEN BY: \n";
-        //out << "n = " << psi.n_ << '\n';
         out << "phase = exp(" << psi.phase_ << "*i*pi/4)\n";
+        out << "r = " << psi.r_ << "\n";
         if (psi.r_ > 0) { // If psi is a computational basis state, no need to print this stuff
             out << "Q = " << std::endl << psi.Q_ << '\n';
             out << "A = " << std::endl << psi.A_ << '\n';
@@ -347,27 +346,29 @@ namespace stab {
             out << "(" << p.first << ", " << p.second << "), ";
         }
 
-        //// Very naive way of printing the state, but this will mainly be used
-        //// for debugging. We can always optimize it later if it's important.
-        //if (psi.r_ > 15) {
-        //    std::cout << "Too many amplitudes to print\n";
-        //} else {
-        //    Eigen::VectorXi x;
-        //    x.setZero(psi.r_);
-        //    for (int i = 0; i < pow(2, psi.r_); ++i) {
-        //        std::bitset<16> bs(i);         // Get binary string
-        //        for (int j = 0; j < psi.r_; ++j) { // Cast binary string to x
-        //            x(j) = int(bs[j]);
-        //        }
+        std::cout << "\nAmplitude representation:\n";
+        
+        // Very naive way of printing the state, but this will mainly be used
+        // for debugging. We can always optimize it later if it's important.
+        if (psi.r_ > 15) {
+            std::cout << "Too many amplitudes to print\n";
+        } else {
+            Eigen::VectorXi x;
+            x.setZero(psi.r_);
+            for (int i = 0; i < pow(2, psi.r_); ++i) {
+                std::bitset<16> bs(i);         // Get binary string
+                for (int j = 0; j < psi.r_; ++j) { // Cast binary string to x
+                    x(j) = int(bs[j]);
+                }
 
-        //        Eigen::VectorXi ket = psi.A_ * x + psi.b_;
-        //        ket = ReduceMod(ket, 2);
-        //        std::string rel_phase;
-        //        int ampl = (2 * (x.transpose() * psi.Q_ * x)[0] + psi.phase_)%8;
-        //        out << ampl << "...|" << ket.transpose()
-        //            << ">\n";
-        //    }
-        //}
+                Eigen::VectorXi ket = psi.A_ * x + psi.b_;
+                ket = ReduceMod(ket, 2);
+                std::string rel_phase;
+                int ampl = (2 * (x.transpose() * psi.Q_ * x)[0] + psi.phase_)%8;
+                out << ampl << "...|" << ket.transpose()
+                    << ">\n";
+            }
+        }
         return out;
     }
 

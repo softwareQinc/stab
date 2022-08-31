@@ -45,6 +45,8 @@ namespace stab {
 
         void S(int j);
 
+        void SDG(int j);
+
         void H(int a);
 
         void X(int j);

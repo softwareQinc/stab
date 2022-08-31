@@ -141,12 +141,6 @@ class QASMSimulator final : public ast::Visitor {
         int s1 = id1.size();
         int s2 = id2.size();
 
-        std::cout << dgate.name() << " " << dgate.qarg(0) << " ";
-        if (s2 > 0) {
-            std::cout << dgate.qarg(1);
-        }
-        std::cout << "\n";
-
         // Now apply the gates.
         // One-qubit gates:
         if (dgate.name() == "h") {
@@ -157,11 +151,9 @@ class QASMSimulator final : public ast::Visitor {
             for (int i : id1) {
                 psi.S(i);
             }
-        } else if (dgate.name() == "sdg") { // TODO: Add this gate natively
+        } else if (dgate.name() == "sdg") {
             for (int i : id1) {
-                psi.S(i);
-                psi.S(i);
-                psi.S(i);
+                psi.SDG(i);
             }
         } else if (dgate.name() == "x") {
             for (int i : id1) {
@@ -212,9 +204,8 @@ class QASMSimulator final : public ast::Visitor {
                 psi.SWAP(id1[i], id2[i]);
             }
         } /*Otherwise it's some other unsupported gate*/ else {
-            throw std::logic_error("Gate must be one of {x, y, z, h, s, cx, cz, swap}.");
+            throw std::logic_error("Gate must be one of {x, y, z, h, s, sdg, cx, cz, swap}.");
         }
-        std::cout << psi << "\n\n\n";
         return;
     }
 
