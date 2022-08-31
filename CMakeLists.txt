@@ -8,13 +8,13 @@ find_package(Eigen3 REQUIRED)
 include_directories(${PROJECT_SOURCE_DIR}/src)
 file(GLOB SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 
-add_executable(stab main.cpp ${SOURCES})
-target_link_libraries(stab Eigen3::Eigen)
-
 #### qasmtools library
 add_library(libqasmtools INTERFACE)
 target_include_directories(libqasmtools INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/qasmtools/include/>)
+
+add_executable(stab main.cpp ${SOURCES})
+target_link_libraries(stab Eigen3::Eigen libqasmtools)
 
 #### Unit testing
 add_subdirectory(${CMAKE_SOURCE_DIR}/unit_tests)
