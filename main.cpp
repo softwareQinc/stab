@@ -9,14 +9,14 @@
 int main() {
     using namespace stab;
 
-    AffineState psi(2);
+    /*AffineState psi(2);
     psi.X(0);
     psi.X(1);
     psi.H(0);
     psi.H(1);
     psi.CX(0, 1);
 
-    std::cout << psi.to_vec();
+    std::cout << psi.to_vec();*/
 
     //std::string prog( // Random Clifford circuit:
     //    "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[10];\ns q[0];\ns q[1];\nh q[4];\nh q[5];\ns q[6];\ncx "
