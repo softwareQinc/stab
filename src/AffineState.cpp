@@ -331,7 +331,7 @@ namespace stab {
     }
 
     std::ostream &operator<<(std::ostream &out, AffineState const &psi) {
-        out << "STATE IS GIVEN BY: \n";
+        out << "QUADRATIC FORM REPRESENTATION: \n";
         out << "phase = exp(" << psi.phase_ << "*i*pi/4)\n";
         out << "r = " << psi.r_ << "\n";
         if (psi.r_ > 0) { // If psi is a computational basis state, no need to print this stuff
@@ -344,11 +344,11 @@ namespace stab {
             out << "(" << p.first << ", " << p.second << "), ";
         }
 
-        std::cout << "\nAmplitude representation:\n";
+        std::cout << "\n\n BASIS STATE DECOMPOSITION:\n";
         
         // Very naive way of printing the state, but this will mainly be used
         // for debugging. We can always optimize it later if it's important.
-        if (psi.r_ > 15) {
+        if (psi.r_ > 12) {
             std::cout << "Too many amplitudes to print\n";
         } else {
             Eigen::VectorXi x;
@@ -363,8 +363,8 @@ namespace stab {
                 ket = ReduceMod(ket, 2);
                 std::string rel_phase;
                 int ampl = (2 * (x.transpose() * psi.Q_ * x)[0] + psi.phase_)%8;
-                out << ampl << "...|" << ket.transpose()
-                    << ">\n";
+                out << "exp(" << ampl << "i*pi/4) * "
+                    << "|" << ket.transpose() << ">\n";
             }
         }
         return out;
@@ -372,42 +372,4 @@ namespace stab {
 
     void AffineState::print() const { std::cout << '\n' << *this << std::endl; }
 
-    void AffineState::print_amplitudes() {
-        // Very naive way of printing the state, but this will mainly be used for debugging. We can always optimize it later if it's important.
-        if (r_ > 15) {
-            std::cout << "Too many amplitudes to print\n";
-        } else {
-            std::cout << "Global phase exp(" << phase_ << "*i*pi/4)\n";
-            Eigen::VectorXi x;
-            x.setZero(r_);
-            for (int i = 0; i < pow(2, r_); ++i) {
-                std::bitset<16> bs(i); // Get binary string
-                for (int j = 0; j < r_; ++j) { // Cast binary string to x
-                    x(j) = int(bs[j]);
-                }
-
-                Eigen::VectorXi ket = A_ * x + b_;
-                ket = ReduceMod(ket, 2);
-                std::string rel_phase;
-                switch ((x.transpose() * Q_ * x) % 4) {
-                    case 0:
-                        rel_phase = "  ";
-                        break;
-                    case 1:
-                        rel_phase = " i";
-                        break;
-                    case 2:
-                        rel_phase = " -";
-                        break;
-                    case 3:
-                        rel_phase = "-i";
-                        break;
-                    default:
-                        rel_phase = "abc";
-                }
-
-                std::cout << rel_phase << "|" << ket.transpose() << ">\n";
-            }
-        }
-    }
 } // namespace stab
