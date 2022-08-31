@@ -24,6 +24,6 @@ foreach (FILE ${TEST_FILES})
     target_sources(${TARGET_NAME} PUBLIC ${FILE})
 endforeach ()
 
-target_link_libraries(${TARGET_NAME} PUBLIC gmock Eigen3::Eigen libqasmtools ${QPP_LINK_DEPS} libqpp)
+target_link_libraries(${TARGET_NAME} PUBLIC gmock libstab libqasmtools Eigen3::Eigen ${QPP_LINK_DEPS} libqpp)
 
 gtest_discover_tests(${TARGET_NAME})

@@ -11,6 +11,8 @@
 
 using namespace stab;
 
+AffineState random_state() { return AffineState{3}; }
+
 TEST(Test1, Case1) {
     std::cout << "hello first test!\n";
 
