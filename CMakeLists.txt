@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 project(stab)
+enable_testing()
 
 set(CMAKE_CXX_STANDARD 17)
 find_package(Eigen3 REQUIRED)
@@ -11,5 +12,9 @@ add_executable(stab main.cpp ${SOURCES})
 target_link_libraries(stab Eigen3::Eigen)
 
 #### qasmtools library
-target_include_directories(stab PUBLIC
+add_library(libqasmtools INTERFACE)
+target_include_directories(libqasmtools INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/qasmtools/include/>)
+
+#### Unit testing
+add_subdirectory(${CMAKE_SOURCE_DIR}/unit_tests)
