@@ -10,15 +10,15 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 file(GLOB SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 
 #### qasmtools_stab library
-add_library(libqasmtools INTERFACE)
-target_include_directories(libqasmtools INTERFACE
+add_library(qasmtools INTERFACE)
+target_include_directories(qasmtools INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/qasmtools/include/>)
 
-add_library(libstab SHARED ${SOURCES})
-target_link_libraries(libstab Eigen3::Eigen)
+add_library(stab-common SHARED ${SOURCES})
+target_link_libraries(stab-common Eigen3::Eigen)
 
 add_executable(stab main.cpp)
-target_link_libraries(stab libstab libqasmtools ${QPP_LINK_DEPS} libqpp)
+target_link_libraries(stab stab-common qasmtools ${QPP_LINK_DEPS} libqpp)
 
 #### Unit testing
 add_subdirectory(${CMAKE_SOURCE_DIR}/unit_tests)
