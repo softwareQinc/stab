@@ -1,5 +1,5 @@
 /*
- * This file is part of qasmtools.
+ * This file is part of qasmtools_stab.
  *
  * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
  *
@@ -25,7 +25,7 @@
  */
 
 /**
- * \file qasmtools/ast/var.hpp
+ * \file qasmtools_stab/ast/var.hpp
  * \brief OpenQASM variable utilities
  */
 
@@ -36,11 +36,11 @@
 #include <cstddef>
 #include <optional>
 
-namespace qasmtools {
+namespace qasmtools_stab {
 namespace ast {
 
 /**
- * \class qasmtools::ast::VarAccess
+ * \class qasmtools_stab::ast::VarAccess
  * \brief Class for variable accesses
  *
  * Represents accesses into a register by the register name and an optional
@@ -168,7 +168,7 @@ class VarAccess final : public ASTNode {
 };
 
 } // namespace ast
-} // namespace qasmtools
+} // namespace qasmtools_stab
 
 namespace std {
 /**
@@ -178,8 +178,8 @@ namespace std {
  * Implementation and magic numbers taken from boost::hash_combine.
  */
 template <>
-struct hash<qasmtools::ast::VarAccess> {
-    std::size_t operator()(const qasmtools::ast::VarAccess& v) const {
+struct hash<qasmtools_stab::ast::VarAccess> {
+    std::size_t operator()(const qasmtools_stab::ast::VarAccess& v) const {
         std::size_t lhs = std::hash<std::string>{}(v.var_);
         lhs ^= std::hash<std::optional<int>>{}(v.offset_) + 0x9e3779b9 +
                (lhs << 6) + (lhs >> 2);

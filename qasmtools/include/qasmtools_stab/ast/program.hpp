@@ -1,5 +1,5 @@
 /*
- * This file is part of qasmtools.
+ * This file is part of qasmtools_stab.
  *
  * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
  *
@@ -25,7 +25,7 @@
  */
 
 /**
- * \file qasmtools/ast/program.hpp
+ * \file qasmtools_stab/ast/program.hpp
  * \brief OpenQASM programs
  */
 
@@ -33,11 +33,11 @@
 
 #include "decl.hpp"
 
-namespace qasmtools {
+namespace qasmtools_stab {
 namespace ast {
 
 /**
- * \class qasmtools::ast::Program
+ * \class qasmtools_stab::ast::Program
  * \brief Program class
  */
 class Program : public ASTNode {
@@ -140,4 +140,4 @@ class Program : public ASTNode {
 };
 
 } // namespace ast
-} // namespace qasmtools
+} // namespace qasmtools_stab

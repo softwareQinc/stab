@@ -4,7 +4,10 @@
 
 #include "gtest/gtest.h"
 
+#include <qpp/qpp.h>
+
 #include <iostream>
+
 
 using namespace stab;
 
@@ -45,10 +48,12 @@ AffineState random_state(int nq) {
 
 TEST(ProduceRandomStates, NQubits1To10) {
     std::cout << "hello first test!\n";
-    for (int n = 1; n < 11; ++n) {
-        AffineState psi(n);
-    }
-    EXPECT_EQ(0, 0);
+
+    // test that qpp is working
+    using namespace qpp;
+    ket psi = 0_ket;
+
+    EXPECT_EQ(psi, 0_ket);
 }
 
 TEST(ConvertToStatevector, RandomStates) {

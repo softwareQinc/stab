@@ -1,5 +1,5 @@
 /*
- * This file is part of qasmtools.
+ * This file is part of qasmtools_stab.
  *
  * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
  *
@@ -25,7 +25,7 @@
  */
 
 /**
- * \file qasmtools/ast/expr.hpp
+ * \file qasmtools_stab/ast/expr.hpp
  * \brief OpenQASM expressions
  */
 
@@ -37,7 +37,7 @@
 #include <cmath>
 #include <iomanip>
 
-namespace qasmtools {
+namespace qasmtools_stab {
 namespace ast {
 
 /**
@@ -97,7 +97,7 @@ inline std::ostream& operator<<(std::ostream& os, const UnaryOp& uop) {
 }
 
 /**
- * \class qasmtools::ast::Expr
+ * \class qasmtools_stab::ast::Expr
  * \brief Base class for OpenQASM expressions
  */
 class Expr : public ASTNode {
@@ -130,9 +130,9 @@ class Expr : public ASTNode {
 };
 
 /**
- * \class qasmtools::ast::BExpr
+ * \class qasmtools_stab::ast::BExpr
  * \brief Class for binary operator expressions
- * \see qasmtools::ast::Expr
+ * \see qasmtools_stab::ast::Expr
  */
 class BExpr final : public Expr {
     ptr<Expr> lexp_; ///< the left sub-expression
@@ -242,9 +242,9 @@ class BExpr final : public Expr {
 };
 
 /**
- * \class qasmtools::ast::UExpr
+ * \class qasmtools_stab::ast::UExpr
  * \brief Class for unary operator expressions
- * \see qasmtools::ast::Expr
+ * \see qasmtools_stab::ast::Expr
  */
 class UExpr final : public Expr {
     UnaryOp op_;    ///< the unary operator
@@ -337,9 +337,9 @@ class UExpr final : public Expr {
 };
 
 /**
- * \class qasmtools::ast::PiExpr
+ * \class qasmtools_stab::ast::PiExpr
  * \brief Class for pi constants
- * \see qasmtools::ast::Expr
+ * \see qasmtools_stab::ast::Expr
  */
 class PiExpr final : public Expr {
 
@@ -372,9 +372,9 @@ class PiExpr final : public Expr {
 };
 
 /**
- * \class qasmtools::ast::IntExpr
+ * \class qasmtools_stab::ast::IntExpr
  * \brief Class for integer literal expressions
- * \see qasmtools::ast::Expr
+ * \see qasmtools_stab::ast::Expr
  */
 class IntExpr final : public Expr {
     int value_; ///< the integer value
@@ -418,9 +418,9 @@ class IntExpr final : public Expr {
 };
 
 /**
- * \class qasmtools::ast::RealExpr
+ * \class qasmtools_stab::ast::RealExpr
  * \brief Class for floating point literal expressions
- * \see qasmtools::ast::Expr
+ * \see qasmtools_stab::ast::Expr
  */
 class RealExpr final : public Expr {
     double value_; ///< the floating point value
@@ -463,9 +463,9 @@ class RealExpr final : public Expr {
 };
 
 /**
- * \class qasmtools::ast::VarExpr
+ * \class qasmtools_stab::ast::VarExpr
  * \brief Class for variable expressions
- * \see qasmtools::ast::Expr
+ * \see qasmtools_stab::ast::Expr
  */
 class VarExpr final : public Expr {
     symbol var_; ///< the identifier
@@ -542,4 +542,4 @@ inline ptr<Expr> angle_to_expr(const utils::Angle& theta) {
 }
 
 } // namespace ast
-} // namespace qasmtools
+} // namespace qasmtools_stab

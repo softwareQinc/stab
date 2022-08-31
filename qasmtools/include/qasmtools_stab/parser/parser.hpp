@@ -1,5 +1,5 @@
 /*
- * This file is part of qasmtools.
+ * This file is part of qasmtools_stab.
  *
  * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
  *
@@ -27,7 +27,7 @@
  */
 
 /**
- * \file qasmtools/parser/parser.hpp
+ * \file qasmtools_stab/parser/parser.hpp
  * \brief OpenQASM parsing
  */
 
@@ -38,11 +38,11 @@
 
 #include <list>
 
-namespace qasmtools {
+namespace qasmtools_stab {
 namespace parser {
 
 /**
- * \class qasmtools::parser::ParseError
+ * \class qasmtools_stab::parser::ParseError
  * \brief Exception class for parse errors
  */
 class ParseError : public std::exception {
@@ -53,9 +53,9 @@ class ParseError : public std::exception {
 };
 
 /**
- * \class qasmtools::parser::Parser
+ * \class qasmtools_stab::parser::Parser
  * \brief OpenQASM parser class
- * \see qasmtools::parser::Preprocessor
+ * \see qasmtools_stab::parser::Preprocessor
  */
 class Parser {
     Preprocessor& pp_lexer_; ///< preprocessed, tokenized input stream
@@ -690,7 +690,7 @@ class Parser {
 
     /**
      * \brief Parse an atomic expression
-     * \see qpp:qasmtools::Parser::parse_exp()
+     * \see qpp:qasmtools_stab::Parser::parse_exp()
      *
      * \return Unique pointer to an expression object
      */
@@ -765,7 +765,7 @@ class Parser {
 
     /**
      * \brief Parse a binary operator
-     * \see qpp:qasmtools::Parser::parse_exp()
+     * \see qpp:qasmtools_stab::Parser::parse_exp()
      *
      * \return Binary operator
      */
@@ -802,7 +802,7 @@ class Parser {
 
     /**
      * \brief Parse a unary operator
-     * \see qpp:qasmtools::Parser::parse_exp()
+     * \see qpp:qasmtools_stab::Parser::parse_exp()
      *
      * \return Unary operator
      */
@@ -1053,4 +1053,4 @@ inline ast::ptr<ast::Program> parse_string(const std::string& str,
 }
 
 } // namespace parser
-} // namespace qasmtools
+} // namespace qasmtools_stab
