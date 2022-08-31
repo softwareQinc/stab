@@ -4,6 +4,8 @@
 
 #include "gtest/gtest.h"
 
+#include <iostream>
+
 using namespace stab;
 
 TEST(Test1, Case1) {
