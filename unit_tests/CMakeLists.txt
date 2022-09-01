@@ -31,6 +31,5 @@ if (WIN32)
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
                 "${PROJECT_BINARY_DIR}/stab-common.dll"        # <--this is in-file
                 $<TARGET_FILE_DIR:unit_tests>)                 # <--this is out-file path
-        MESSAGE(${PROJECT_BINARY_DIR})
     endif ()
 endif ()
