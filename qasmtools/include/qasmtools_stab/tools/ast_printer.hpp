@@ -33,7 +33,7 @@
 
 #include "../ast/ast.hpp"
 
-namespace qasmtools {
+namespace qasmtools_stab {
 namespace tools {
 
 class ASTPrinter final : public ast::Visitor {

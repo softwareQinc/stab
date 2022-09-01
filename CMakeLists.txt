@@ -14,7 +14,6 @@ add_library(qasmtools INTERFACE)
 target_include_directories(qasmtools INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/qasmtools/include/>)
 
-
 #### Export stab-common library symbols on Windows
 if (WIN32)
     if (MSVC)
