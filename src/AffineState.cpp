@@ -366,7 +366,7 @@ namespace stab {
             std::complex<double> phase = (2 * (x.transpose() * Q_ * x)[0] + phase_);
             vec[basis_state_number] += std::exp(i * pi * phase / 4.0);
         }
-        return vec / pow(2, ncols);
+        return vec / pow(2, ncols/2.0);
     }
 
     std::ostream &operator<<(std::ostream &out, AffineState const &psi) {
