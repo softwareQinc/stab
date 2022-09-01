@@ -27,3 +27,14 @@ endforeach ()
 target_link_libraries(${TARGET_NAME} PUBLIC gmock stab-common qasmtools Eigen3::Eigen ${QPP_LINK_DEPS} libqpp)
 
 gtest_discover_tests(${TARGET_NAME})
+
+#### If on Windows, copy the stab-common.dll into the unit_tests folder
+if (WIN32)
+    if (MSVC)
+        add_custom_command(TARGET ${TARGET_NAME} POST_BUILD    # Adds a post-build event to MyTest
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
+                "${PROJECT_BINARY_DIR}/stab-common.dll"        # <--this is in-file
+                $<TARGET_FILE_DIR:unit_tests>)                 # <--this is out-file path
+        MESSAGE(${PROJECT_BINARY_DIR})
+    endif ()
+endif ()
