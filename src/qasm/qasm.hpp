@@ -256,6 +256,14 @@ inline void simulate(std::istream& stream) {
     std::cout << psi << std::endl;
 }
 
+AffineState simulate_and_return(std::istream& stream) {
+    ast::ptr<ast::Program> program = parser::parse_stream(stream);
+
+    QASMSimulator qs(program->qubits());
+    auto psi = qs.run(*program);
+    return psi;
+}
+
 inline void simulate_file(const std::string& fname) {
     ast::ptr<ast::Program> program = parser::parse_file(fname);
 

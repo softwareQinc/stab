@@ -8,6 +8,8 @@
 
 #include <iostream>
 
+#include <string>
+
 
 using namespace stab;
 
@@ -46,6 +48,49 @@ AffineState random_state(int nq) {
     return psi;
 }
 
+
+std::string random_qasm(int nq, bool measure) {
+    std::vector<std::string> gates = {"x",   "y",  "z",  "s",   "h",
+                                      "sdg", "cx", "cz", "swap"};
+    // Boilerplate stuff at top of qasm code:
+    std::string qasm = "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg[" +
+                       std::to_string(nq) + "];\n";
+    if (measure) {
+        qasm += "creg[" + std::to_string(nq) + "];\n";
+    }
+
+    // Now add some gates
+
+    for (int gatenumber = 0; gatenumber < pow(nq, 3); ++gatenumber) {
+        int randno = random_integer(0, 8);
+        std::string gate = gates[randno];
+        
+        int q1 = random_integer(0, nq - 1);
+        int q2; // Only needed if randno > 5:
+        if (randno > 5) {
+            q2 = q1;
+            while (q2 == q1) {
+                q2 = random_integer(0, nq - 1);
+            }
+        }
+
+        qasm += gate + " q[" + std::to_string(q1) + "]";
+        if (randno > 5) {
+            qasm += ",q[" + std::to_string(q2) + "]";
+        }
+        qasm += ";\n";
+    }
+
+    if (measure) {
+        for (int i = 0; i < nq; ++i) {
+            qasm += "measure q[" + std::to_string(i) + "] -> c[" +
+                    std::to_string(i) + "];\n";
+        }
+    }
+    
+    return qasm;
+}
+
 TEST(QppWorking, AllZeroState) {
     std::cout << "hello first test!\n";
 
@@ -69,13 +114,18 @@ TEST(GenerateRandomStates, CheckNorms) {
     for (int n = 1; n < 10; ++n) {
         AffineState psi = random_state(n);
         Eigen::VectorXcd vec = psi.to_vec();
-        //std::cout << "\npsi = " << psi << "\n";
-        //std::cout << "\nvec is " << vec << "\n";
-        //double nrm = vec.norm();
-        //std::cout << "norm is " << nrm << "\n";
         success = (abs(vec.norm() - 1) < 1e-4);
     }
     EXPECT_TRUE(success);
+}
+
+TEST(CompareWithQPP, RandomQasm) {
+    bool success = true;
+    for (int nq = 1; nq < 10; ++nq) {
+        std::string qsm = random_qasm(nq, false);
+        qasm::QASMSimulator qs(nq);
+        qs.run();
+    }
 }
 
 // this test will pass

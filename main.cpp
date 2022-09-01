@@ -12,8 +12,7 @@ int main() {
 
     using namespace stab;
 
-    int ncols = 3;
-    std::cout << pow(2, ncols/2.0);
+    AffineState psi(3);
 
     //std::string prog( // Random Clifford circuit:
     //        "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[10];\ns q[0];\ns q[1];\nh q[4];\nh q[5];\ns q[6];\ncx "
