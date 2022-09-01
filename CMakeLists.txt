@@ -3,7 +3,7 @@ project(stab)
 enable_testing()
 
 set(CMAKE_CXX_STANDARD 17)
-find_package(Eigen3 REQUIRED)
+find_package(Eigen3 3.4 REQUIRED) # because we're using Eigen::seq()
 find_package(qpp REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
