@@ -8,16 +8,12 @@ if (MSVC)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 endif ()
 
-add_subdirectory(lib/googletest-release-1.12.1 EXCLUDE_FROM_ALL)
+add_subdirectory(lib/googletest-release-1.12.1)
 
 aux_source_directory(tests TEST_FILES)
 
-add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL tests/main.cpp)
+add_executable(${TARGET_NAME} tests/main.cpp)
 add_dependencies(unit_tests ${TARGET_NAME})
-
-if (NOT ${CMAKE_VERSION} VERSION_LESS "3.13")
-    cmake_policy(SET CMP0076 NEW)
-endif ()
 
 #### Build all tests in ${TEST_FILES}
 foreach (FILE ${TEST_FILES})
