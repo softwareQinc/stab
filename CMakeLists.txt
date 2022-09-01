@@ -15,7 +15,7 @@ target_include_directories(qasmtools INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/qasmtools/include/>)
 
 
-#### stab-common library
+#### Export stab-common library symbols on Windows
 if (WIN32)
     if (MSVC)
         set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
