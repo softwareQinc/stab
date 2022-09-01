@@ -18,7 +18,7 @@ target_include_directories(qasmtools INTERFACE
 #### stab-common library
 if (WIN32)
     if (MSVC)
-        set(WINDOWS_EXPORT_ALL_SYMBOLS ON)
+        set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     endif ()
 endif ()
 add_library(stab-common SHARED ${SOURCES})
