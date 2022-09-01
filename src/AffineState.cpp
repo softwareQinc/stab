@@ -40,11 +40,12 @@ namespace stab {
     }
 
     void AffineState::ReindexSwapColumns(int k, int c) {
-        assert(c != k);
-        A_.col(k).swap(A_.col(c));
-        Q_.col(k).swap(Q_.col(c));
-        Q_.row(k).swap(Q_.row(c));
-        std::swap(pivots_.at(k), pivots_.at(c));
+        if (c != k) {
+            A_.col(k).swap(A_.col(c));
+            Q_.col(k).swap(Q_.col(c));
+            Q_.row(k).swap(Q_.row(c));
+            std::swap(pivots_.at(k), pivots_.at(c));
+        }
     }
 
     void AffineState::MakePrincipal(int c, int j) {
@@ -365,7 +366,7 @@ namespace stab {
             std::complex<double> phase = (2 * (x.transpose() * Q_ * x)[0] + phase_);
             vec[basis_state_number] += std::exp(i * pi * phase / 4.0);
         }
-        return vec;
+        return vec / pow(2, ncols);
     }
 
     std::ostream &operator<<(std::ostream &out, AffineState const &psi) {

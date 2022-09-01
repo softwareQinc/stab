@@ -9,6 +9,7 @@
 #include <qpp/qpp.h>
 
 int main() {
+
     using namespace stab;
 
     std::string prog( // Random Clifford circuit:
@@ -40,9 +41,4 @@ int main() {
     qasm::simulate(prog_stream);
 
     std::cout << std::endl;
-
-    // testing that qpp works
-    using namespace qpp;
-    ket psi = 0_ket;
-    std::cout << disp(psi) << '\n';
 }

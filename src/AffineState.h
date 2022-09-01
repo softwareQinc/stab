@@ -107,6 +107,7 @@ namespace stab {
         };
         return A.unaryExpr(mod_p(modulus));
     }
+
 } // namespace stab
 
 #endif // AFFINE_STATE_H_
