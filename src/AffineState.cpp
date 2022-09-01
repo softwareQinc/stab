@@ -40,11 +40,12 @@ namespace stab {
     }
 
     void AffineState::ReindexSwapColumns(int k, int c) {
-        assert(c != k);
-        A_.col(k).swap(A_.col(c));
-        Q_.col(k).swap(Q_.col(c));
-        Q_.row(k).swap(Q_.row(c));
-        std::swap(pivots_.at(k), pivots_.at(c));
+        if (c != k) {
+            A_.col(k).swap(A_.col(c));
+            Q_.col(k).swap(Q_.col(c));
+            Q_.row(k).swap(Q_.row(c));
+            std::swap(pivots_.at(k), pivots_.at(c));
+        }
     }
 
     void AffineState::MakePrincipal(int c, int j) {
@@ -209,10 +210,6 @@ namespace stab {
     }
 
     void AffineState::CX(int h, int j) {
-       /* H(j);
-        CZ(h, j);
-        H(j);*/
-
         // Step 1:
         int c = -1;
         for (int cc = 0; cc < r_; ++cc) {
@@ -255,7 +252,10 @@ namespace stab {
         }
     }
 
-    void AffineState::S(int j) {
+    void AffineState::S_or_SDG(int j, bool dg) {
+        // dg = true means we apply S^\dagger, dg = false means we apply S
+        int sign = 1 - 2*int(dg);  // = +1 for S and -1 for S^\dagger
+
         if (r_ > 0) {
             bool is_pivot = false;
             int pivcol;
@@ -268,20 +268,19 @@ namespace stab {
 
             if (is_pivot) {
                 Q_(pivcol, pivcol) =
-                    (Q_(pivcol, pivcol) + (1 - 2 * b_(j)) + 4) % 4;
+                    (Q_(pivcol, pivcol) + sign * (1 - 2 * b_(j)) + 4) % 4;
             } else {
                 Eigen::VectorXi a_j = A_.row(j).transpose();
-                Q_ += (1 - 2 * b_(j)) * a_j * a_j.transpose();
+                Q_ += sign * (1 - 2 * b_(j)) * a_j * a_j.transpose();
                 ReduceQ();
             }
         }
-        phase_ = (phase_ + 2 * b_(j)) % 8;
+        phase_ = (phase_ + sign * 2 * b_(j)) % 8;
     }
 
-    void AffineState::SDG(int j) { // TODO: Implement natively
-        S(j);
-        Z(j);
-    }
+    void AffineState::S(int j) { S_or_SDG(j, false); }
+
+    void AffineState::SDG(int j) { S_or_SDG(j, true); }
 
     void AffineState::X(int j) { b_(j) = (b_(j) + 1) % 2; }
 
@@ -332,8 +331,46 @@ namespace stab {
         Q_.diagonal() = qdiag;
     }
 
+    Eigen::VectorXcd AffineState::to_vec() {
+        if (n_ > 16) {
+            throw std::logic_error("Maximum number of qubits for statevector "
+                                   "representation is 15");
+        }
+        std::complex<double> pi = std::atan(1.0) * 4.0;
+        std::complex<double> i(0, 1); // TODO: Better way of getting i and pi?
+
+
+        Eigen::VectorXcd vec; // This will be the statevector
+        vec.setZero(pow(2, n_));
+        int ncols = A_.cols(); // Not using r_ since we sometimes will include a zero column during unit testing
+        for (int k = 0; k < pow(2, ncols); ++k) {
+            // For each x \in \{0,1\}^ncols, we now add the corresponding term to vec
+            // First, let x = vector whose entries are the binary digits of k:
+            Eigen::VectorXi x;
+            x.setZero(ncols);
+            std::bitset<16> bs(k);             // Get binary string
+            for (int j = 0; j < ncols; ++j) { // Cast binary string to x
+                x(j) = int(bs[j]);
+            }
+
+            // Figure out which basis state x results in:
+            Eigen::VectorXi ket = A_ * x + b_;
+            ket = ReduceMod(ket, 2);
+            // "ket" is the binary representation of some number basis_state_number. We need to add the correct amplitude into vec[basis_state_number]. Note that AffineState puts the zero-th qubit on the left, but most people put it on the right, so we also make this conversion.
+
+            int basis_state_number = 0;
+            for (int j = 0; j < n_; ++j) {
+                basis_state_number += int(ket(j) * pow(2, j)); // Conversion
+            }
+
+            std::complex<double> phase = (2 * (x.transpose() * Q_ * x)[0] + phase_);
+            vec[basis_state_number] += std::exp(i * pi * phase / 4.0);
+        }
+        return vec / pow(2, ncols/2.0);
+    }
+
     std::ostream &operator<<(std::ostream &out, AffineState const &psi) {
-        out << "STATE IS GIVEN BY: \n";
+        out << "QUADRATIC FORM REPRESENTATION: \n";
         out << "phase = exp(" << psi.phase_ << "*i*pi/4)\n";
         out << "r = " << psi.r_ << "\n";
         if (psi.r_ > 0) { // If psi is a computational basis state, no need to print this stuff
@@ -346,11 +383,11 @@ namespace stab {
             out << "(" << p.first << ", " << p.second << "), ";
         }
 
-        std::cout << "\nAmplitude representation:\n";
+        std::cout << "\n\n BASIS STATE DECOMPOSITION:\n";
         
         // Very naive way of printing the state, but this will mainly be used
         // for debugging. We can always optimize it later if it's important.
-        if (psi.r_ > 15) {
+        if (psi.r_ > 12) {
             std::cout << "Too many amplitudes to print\n";
         } else {
             Eigen::VectorXi x;
@@ -365,8 +402,8 @@ namespace stab {
                 ket = ReduceMod(ket, 2);
                 std::string rel_phase;
                 int ampl = (2 * (x.transpose() * psi.Q_ * x)[0] + psi.phase_)%8;
-                out << ampl << "...|" << ket.transpose()
-                    << ">\n";
+                out << "exp(" << ampl << "i*pi/4) * "
+                    << "|" << ket.transpose() << ">\n";
             }
         }
         return out;
@@ -374,42 +411,4 @@ namespace stab {
 
     void AffineState::print() const { std::cout << '\n' << *this << std::endl; }
 
-    void AffineState::print_amplitudes() {
-        // Very naive way of printing the state, but this will mainly be used for debugging. We can always optimize it later if it's important.
-        if (r_ > 15) {
-            std::cout << "Too many amplitudes to print\n";
-        } else {
-            std::cout << "Global phase exp(" << phase_ << "*i*pi/4)\n";
-            Eigen::VectorXi x;
-            x.setZero(r_);
-            for (int i = 0; i < pow(2, r_); ++i) {
-                std::bitset<16> bs(i); // Get binary string
-                for (int j = 0; j < r_; ++j) { // Cast binary string to x
-                    x(j) = int(bs[j]);
-                }
-
-                Eigen::VectorXi ket = A_ * x + b_;
-                ket = ReduceMod(ket, 2);
-                std::string rel_phase;
-                switch ((x.transpose() * Q_ * x) % 4) {
-                    case 0:
-                        rel_phase = "  ";
-                        break;
-                    case 1:
-                        rel_phase = " i";
-                        break;
-                    case 2:
-                        rel_phase = " -";
-                        break;
-                    case 3:
-                        rel_phase = "-i";
-                        break;
-                    default:
-                        rel_phase = "abc";
-                }
-
-                std::cout << rel_phase << "|" << ket.transpose() << ">\n";
-            }
-        }
-    }
 } // namespace stab

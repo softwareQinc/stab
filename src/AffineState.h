@@ -60,6 +60,7 @@ namespace stab {
 
         void print_amplitudes();
 
+        Eigen::VectorXcd to_vec();
         // Option to print state
         friend std::ostream &operator<<(std::ostream &out, AffineState const &psi);
 
@@ -83,6 +84,8 @@ namespace stab {
         void
         ReduceQ(); // Reduces mod 4 on the diagonal and mod 2 on the off-diagonal
 
+        void S_or_SDG(int j, bool dg);
+
         void print() const; // Only used for printing state at intermediate stages
         // of the calculation when diagnosing errors
     }; // class AffineState
@@ -104,6 +107,7 @@ namespace stab {
         };
         return A.unaryExpr(mod_p(modulus));
     }
+
 } // namespace stab
 
 #endif // AFFINE_STATE_H_
