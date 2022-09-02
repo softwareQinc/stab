@@ -360,7 +360,7 @@ namespace stab {
 
             int basis_state_number = 0;
             for (int j = 0; j < n_; ++j) {
-                basis_state_number += int(ket(j) * pow(2, j)); // Conversion
+                basis_state_number += int(ket(j) * pow(2, n_ - 1 - j)); // Conversion
             }
 
             std::complex<double> phase = (2 * (x.transpose() * Q_ * x)[0] + phase_);

@@ -15,10 +15,12 @@ class QASMSimulator final : public ast::Visitor {
     double
         temp_value; ///< stores intermediate values when computing expressions
     std::unordered_map<std::string, std::pair<int, int>> qregs;
+    std::unordered_map<std::string, std::pair<int, int>> cregs;
     int num_qubits;
+    int num_cbits;
 
   public:
-    explicit QASMSimulator(int nq) : psi(nq), temp_value(0), num_qubits(0) {}
+    explicit QASMSimulator(int nq) : psi(nq), temp_value(0), num_qubits(0), num_cbits(0) {}
 
     stab::AffineState run(ast::Program& prog) {
         prog.accept(*this);
@@ -102,15 +104,17 @@ class QASMSimulator final : public ast::Visitor {
 
     // Statements
     void visit(ast::MeasureStmt& stmt) override {
-        std::vector<int> id = get_ids(stmt.q_arg());
-        for (int i : id) {
+        std::vector<int> idq = get_ids(stmt.q_arg(), true);
+        std::vector<int> idc = get_ids(stmt.c_arg(), false);
+        assert(idq.size() == idc.size());
+        for (int i : idq) {
             psi.MeasureZ(i);
         }
     }
 
     void visit(ast::ResetStmt& stmt) override {
-        std::vector<int> id = get_ids(stmt.arg());
-        for (int i : id) {
+        std::vector<int> idq = get_ids(stmt.arg(), true);
+        for (int i : idq) {
             psi.Reset(i);
         }
     }
@@ -132,11 +136,11 @@ class QASMSimulator final : public ast::Visitor {
 
     void visit(ast::DeclaredGate& dgate) override { // TODO: Optimize?
         // First, get qubit ids.
-        std::vector<int> id1 = get_ids(dgate.qarg(0));
+        std::vector<int> id1 = get_ids(dgate.qarg(0), true);
         std::vector<int> id2; // Only needed for two-qubit gates:
         if (dgate.name() == "cx" || dgate.name() == "cz" ||
             dgate.name() == "swap") {
-            id2 = get_ids(dgate.qarg(1));
+            id2 = get_ids(dgate.qarg(1), true);
         }
         int s1 = id1.size();
         int s2 = id2.size();
@@ -226,6 +230,9 @@ class QASMSimulator final : public ast::Visitor {
         if (decl.is_quantum()) {
             qregs[decl.id()] = {num_qubits, decl.size()};
             num_qubits += decl.size();
+        } else {
+            cregs[decl.id()] = {num_cbits, decl.size()};
+            num_cbits += decl.size();
         }
     }
 
@@ -235,13 +242,23 @@ class QASMSimulator final : public ast::Visitor {
     }
 
   private:
-    std::vector<int> get_ids(ast::VarAccess& va) {
+    std::vector<int> get_ids(ast::VarAccess& va, bool is_quantum) {
         std::vector<int> ids;
-        if (va.offset()) {
-            ids.push_back(qregs[va.var()].first + *va.offset());
-        } else {
-            for (int i = 0; i < qregs[va.var()].second; ++i) {
-                ids.push_back(qregs[va.var()].first + i);
+        if (is_quantum) { // Qubit ids
+            if (va.offset()) {
+                ids.push_back(qregs[va.var()].first + *va.offset());
+            } else {
+                for (int i = 0; i < qregs[va.var()].second; ++i) {
+                    ids.push_back(qregs[va.var()].first + i);
+                }
+            }
+        } else { // Classical bit ids
+            if (va.offset()) {
+                ids.push_back(cregs[va.var()].first + *va.offset());
+            } else {
+                for (int i = 0; i < cregs[va.var()].second; ++i) {
+                    ids.push_back(cregs[va.var()].first + i);
+                }
             }
         }
         return ids;
