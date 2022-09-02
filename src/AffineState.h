@@ -1,5 +1,4 @@
-#ifndef AFFINE_STATE_H_
-#define AFFINE_STATE_H_
+#pragma once
 
 #include <Eigen/Dense>
 #include <cassert>
@@ -109,5 +108,3 @@ namespace stab {
     }
 
 } // namespace stab
-
-#endif // AFFINE_STATE_H_
