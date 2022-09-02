@@ -1,15 +1,13 @@
-#include "AffineState.h"
-#include "random.h"
-#include "qasm/qasm.hpp"
+#include <iostream>
+#include <string>
+#include <qpp/qpp.h>
 
 #include "gtest/gtest.h"
 
-#include <qpp/qpp.h>
-
-#include <iostream>
-
-#include <string>
-
+// include own library **always** last
+#include "AffineState.h"
+#include "random.h"
+#include "qasm/qasm.hpp"
 
 using namespace stab;
 
@@ -102,6 +100,8 @@ TEST(QppWorking, AllZeroState) {
     ket psi = 0_ket;
 
     EXPECT_EQ(psi, 0_ket);
+
+    auto circ = qpp::qasm::read_from_file("some_file");
 }
 
 TEST(GenerateRandomStates, JustGenerate) {

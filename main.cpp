@@ -1,12 +1,13 @@
 #include <iostream>
 
 #include <Eigen/Dense>
+#include <qpp/qpp.h>
 
+// include own library **always** last
 #include "AffineState.h"
 #include "random.h"
 #include "qasm/qasm.hpp"
 
-#include <qpp/qpp.h>
 
 int main() {
 

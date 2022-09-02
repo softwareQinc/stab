@@ -5,7 +5,7 @@
 #include "qasmtools_stab/parser/parser.hpp"
 #include "qasmtools_stab/utils/angle.hpp"
 
-namespace stab::qasm {
+namespace stab::qasm_simulator {
 
 namespace ast = qasmtools_stab::ast;
 namespace parser = qasmtools_stab::parser;
@@ -272,6 +272,6 @@ inline void simulate_file(const std::string& fname) {
     std::cout << psi << std::endl;
 }
 
-} /* namespace stab::qasm */
+} /* namespace stab::qasm_simulator */
 
 #endif /* QASM_QASM_HPP_ */
