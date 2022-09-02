@@ -1,5 +1,4 @@
-#ifndef RANDOM_H_
-#define RANDOM_H_
+#pragma once
 
 #include <random>
 
@@ -24,5 +23,3 @@ namespace stab {
         return dist(get_prng_engine());
     }
 } // namespace stab
-
-#endif // RANDOM_H_
