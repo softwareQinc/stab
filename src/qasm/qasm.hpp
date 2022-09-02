@@ -1,5 +1,5 @@
-#ifndef QASM_QASM_HPP_
-#define QASM_QASM_HPP_
+#ifndef STAB_QASM_QASM_HPP_
+#define STAB_QASM_QASM_HPP_
 
 #include "qasmtools_stab/ast/ast.hpp"
 #include "qasmtools_stab/parser/parser.hpp"
@@ -274,4 +274,4 @@ inline void simulate_file(const std::string& fname) {
 
 } /* namespace stab::qasm_simulator */
 
-#endif /* QASM_QASM_HPP_ */
+#endif /* STAB_QASM_QASM_HPP_ */
