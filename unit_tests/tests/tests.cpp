@@ -82,20 +82,22 @@ TEST(QppWorking, AllZeroState) {
 }
 
 TEST(RandomQASM, Generation) {
+    // test that qasm string generation works
     for (int n = 1; n < 6; ++n) {
         std::string s = random_qasm(n, false);
     }
-    EXPECT_EQ(0, 0);
+    EXPECT_TRUE(true);
 }
 
 TEST(GenerateRandomStates, CheckNorms) {
+    // Test that the AffineState::to_vec() function gives unit vector
     bool success = true;
     for (auto s : circs_without) {
         std::istringstream prog_stream(s);
         AffineState psi =
             stab::qasm_simulator::simulate_and_return(prog_stream);
         Eigen::VectorXcd vec = psi.to_vec();
-        success = (abs(vec.norm() - 1) < 1e-8);
+        success = (abs(vec.norm() - 1) < 1e-12);
         if (!success) {
             break;
         }
@@ -104,6 +106,7 @@ TEST(GenerateRandomStates, CheckNorms) {
 }
 
 TEST(RunRandomQASM, PerformMeasurements) {
+    // Check that simulator runs qasm code and gives a sensible output state
     bool success = true;
     for (auto s : circs_with) {
         std::istringstream prog_stream(s);
@@ -119,6 +122,7 @@ TEST(RunRandomQASM, PerformMeasurements) {
 }
 
 TEST(RunRandomQASM, LargeN) {
+    // Check that we can simulate large circuits that wouldn't be possible with qpp
     for (int nq = 25; nq < 51; nq += 5) {
         std::cout << "nq = " << nq << "\n";
         std::string s = random_qasm(nq, true);
@@ -131,6 +135,7 @@ TEST(RunRandomQASM, LargeN) {
 }
 
 TEST(CompareWithQPP, NoMeasurements) {
+    // Run the same circuit with qpp and AffineState and compare results
     bool success = true;
     for (auto s : circs_without) {
         std::istringstream prog_stream(s);
