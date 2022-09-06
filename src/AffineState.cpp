@@ -18,6 +18,14 @@ namespace stab {
         b_.setZero(n);
     }
 
+    int AffineState::n() { return n_; }
+    int AffineState::phase() { return phase_; }
+    Eigen::MatrixXi AffineState::Q() { return Q_; }
+    Eigen::MatrixXi AffineState::A() { return A_; }
+    Eigen::VectorXi AffineState::b() { return b_; }
+    std::map<int, int> AffineState::pivots() { return pivots_; }
+    int AffineState::r() { return r_; }
+
 // Subroutines:
     void AffineState::ReduceGramRowCol(int c) {
         int new_qcc = (4 + (Q_(c, c) % 4)) % 4; // Need to store this since it gets reduced mod 2 below
@@ -314,6 +322,16 @@ namespace stab {
             FixFinalBit(beta);
             return beta;
         }
+    }
+
+    Eigen::VectorXi AffineState::MeasureAll() { Eigen::VectorXi x;
+        x.setZero(n_);
+        for (int i = 0; i < n_; ++i) {
+            x(i) = random_bit();
+        }
+        x = A_ * x + b_;
+        x = ReduceMod(x, 2);
+        return x;
     }
 
     void AffineState::Reset(int j) {

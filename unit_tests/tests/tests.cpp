@@ -15,15 +15,15 @@ using namespace stab;
 // anonymous namespace, now this function is local to this translation unit
 namespace {
     std::string random_qasm(int nq, bool measure) {
+        // Generate random OPENQASM 2.0 string with or without measurements
     std::vector<std::string> gates = {"x",   "y",  "z",  "s",   "h",
                                       "sdg", "cx", "cz", "swap"};
-    // Boilerplate stuff at top of qasm code:
+
     std::string qasm = "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[" +
                        std::to_string(nq) + "];\ncreg c[" + std::to_string(nq) +
                        "];\n";
 
     // Now add some gates
-
     for (int gatenumber = 0; gatenumber < pow(nq, 3); ++gatenumber) {
         int randno = random_integer(0, 8);
         std::string gate = gates[randno];
@@ -68,7 +68,7 @@ namespace {
     }
 
     const std::pair<std::vector<std::string>, std::vector<std::string>> circs =
-        get_random_circuits(12);
+        get_random_circuits(15);
     const std::vector<std::string> circs_without = circs.first;
     const std::vector<std::string> circs_with = circs.second;
     }
@@ -109,13 +109,25 @@ TEST(RunRandomQASM, PerformMeasurements) {
         std::istringstream prog_stream(s);
         AffineState psi =
             stab::qasm_simulator::simulate_and_return(prog_stream);
-        if (psi.r_ > 0 || psi.A_.size() > 0 || psi.Q_.size() > 0) {
+        if (psi.r() > 0 || psi.A().size() > 0 || psi.Q().size() > 0) {
             success = false;
             break;
         }
     }
     
     EXPECT_TRUE(success);
+}
+
+TEST(RunRandomQASM, LargeN) {
+    for (int nq = 25; nq < 51; nq += 5) {
+        std::cout << "nq = " << nq << "\n";
+        std::string s = random_qasm(nq, true);
+        std::istringstream prog_stream(s);
+        AffineState psi =
+            stab::qasm_simulator::simulate_and_return(prog_stream);
+    }
+
+    EXPECT_TRUE(true);
 }
 
 TEST(CompareWithQPP, NoMeasurements) {

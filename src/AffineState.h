@@ -11,8 +11,38 @@ namespace stab {
     class AffineState {
     public:
 
-        // MEMBER VARIABLES. MOVE BACK TO PRIVATE LATER.
-        
+        explicit AffineState(int n);
+
+        // Unitary gates
+        void CZ(int a, int b);
+        void CX(int a, int b);
+        void SWAP(int a, int b);
+        void S(int j);
+        void SDG(int j);
+        void H(int a);
+        void X(int j);
+        void Y(int j);
+        void Z(int j);
+
+        // Nonunitary operations
+        int MeasureZ(int j); // Returns outcome and updates state
+        Eigen::VectorXi MeasureAll();
+        void Reset(int j); // Resets qubit j to |0>
+
+        Eigen::VectorXcd to_vec();
+
+        friend std::ostream &operator<<(std::ostream &out, AffineState const &psi);
+
+        // Get member variables:
+        int n();
+        int phase();
+        Eigen::MatrixXi Q();
+        Eigen::MatrixXi A();
+        Eigen::VectorXi b();
+        std::map<int, int> pivots();
+        int r();
+
+    private:
         // State is represented by exp(i*pi*phase_/8)/sqrt(2^r_) \sum_{x \in
         // \{0,1\}^r_} i^{x^T Q_ x} \ket{Ax + b_ mod 2}, where A_ is n_\times r_ and
         // has rank r_ <= n_.
@@ -30,40 +60,6 @@ namespace stab {
         // TODO: pivots can probably be changed to an std::unordered_map
         int r_; // Technically unnecessary since this is usually A_.cols() or rank of A_, but it is
         // handy to not have to declare it each time
-
-        // END OF MEMBER VARIABLES
-
-        explicit AffineState(int n);
-
-        // Gates and measurements
-        void CZ(int a, int b);
-
-        void CX(int a, int b);
-
-        void SWAP(int a, int b);
-
-        void S(int j);
-
-        void SDG(int j);
-
-        void H(int a);
-
-        void X(int j);
-
-        void Y(int j);
-
-        void Z(int j);
-
-        int MeasureZ(int j); // Returns outcome and updates state
-        void Reset(int j); // Resets qubit j to |0>
-
-        void print_amplitudes();
-
-        Eigen::VectorXcd to_vec();
-        // Option to print state
-        friend std::ostream &operator<<(std::ostream &out, AffineState const &psi);
-
-    private:
 
         // Subroutines
         void FixFinalBit(int z);
