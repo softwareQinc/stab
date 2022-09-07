@@ -1,7 +1,8 @@
-#include <iostream>
+//#include <iostream> // don't include unless really needed, it's a huge header
 #include <string>
-#include <qpp/qpp.h>
 #include <vector>
+
+#include <qpp/qpp.h>
 
 #include "gtest/gtest.h"
 
@@ -40,24 +41,25 @@ namespace {
             }
         }
 
-        qasm += gate + " q[" + std::to_string(q1) + "]";
-        if (randno > 5) {
-            qasm += ",q[" + std::to_string(q2) + "]";
+            qasm += gate + " q[" + std::to_string(q1) + "]";
+            if (randno > 5) {
+                qasm += ",q[" + std::to_string(q2) + "]";
+            }
+            qasm += ";\n";
         }
-        qasm += ";\n";
+
+        if (measure) {
+            for (int i = 0; i < nq; ++i) {
+                qasm += "measure q[" + std::to_string(i) + "] -> c[" +
+                        std::to_string(i) + "];\n";
+            }
+        }
+
+        return qasm;
     }
 
-    if (measure) {
-        for (int i = 0; i < nq; ++i) {
-            qasm += "measure q[" + std::to_string(i) + "] -> c[" +
-                    std::to_string(i) + "];\n";
-        }
-    }
-    
-    return qasm;
-}
     std::pair<std::vector<std::string>, std::vector<std::string>>
-        get_random_circuits(int nmax) {
+    get_random_circuits(int nmax) {
         std::pair<std::vector<std::string>, std::vector<std::string>> all_circs;
         for (int n = 1; n <= nmax; ++n) {
             std::string s = random_qasm(n, false);
@@ -71,8 +73,8 @@ namespace {
         get_random_circuits(15);
     const std::vector<std::string> circs_without = circs.first;
     const std::vector<std::string> circs_with = circs.second;
-    }
-    
+}
+
 
 TEST(QppWorking, AllZeroState) {
     // test that qpp is working
@@ -92,10 +94,10 @@ TEST(RandomQASM, Generation) {
 TEST(GenerateRandomStates, CheckNorms) {
     // Test that the AffineState::to_vec() function gives unit vector
     bool success = true;
-    for (auto s : circs_without) {
+    for (auto const &s: circs_without) {
         std::istringstream prog_stream(s);
         AffineState psi =
-            stab::qasm_simulator::simulate_and_return(prog_stream);
+                stab::qasm_simulator::simulate_and_return(prog_stream);
         Eigen::VectorXcd vec = psi.to_vec();
         success = (abs(vec.norm() - 1) < 1e-12);
         if (!success) {
@@ -108,7 +110,7 @@ TEST(GenerateRandomStates, CheckNorms) {
 TEST(RunRandomQASM, PerformMeasurements) {
     // Check that simulator runs qasm code and gives a sensible output state
     bool success = true;
-    for (auto s : circs_with) {
+    for (auto const &s: circs_with) {
         std::istringstream prog_stream(s);
         AffineState psi =
             stab::qasm_simulator::simulate_and_return(prog_stream);
@@ -117,7 +119,7 @@ TEST(RunRandomQASM, PerformMeasurements) {
             break;
         }
     }
-    
+
     EXPECT_TRUE(success);
 }
 
@@ -137,10 +139,10 @@ TEST(RunRandomQASM, LargeN) {
 TEST(CompareWithQPP, NoMeasurements) {
     // Run the same circuit with qpp and AffineState and compare results
     bool success = true;
-    for (auto s : circs_without) {
+    for (auto const &s: circs_without) {
         std::istringstream prog_stream(s);
         AffineState psi1 =
-            stab::qasm_simulator::simulate_and_return(prog_stream);
+                stab::qasm_simulator::simulate_and_return(prog_stream);
         Eigen::VectorXcd vec1 = psi1.to_vec();
         prog_stream.str(s); // Reset prog stream
         prog_stream.clear();  // Reset EOF bit
