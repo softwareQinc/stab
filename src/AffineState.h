@@ -81,6 +81,8 @@ namespace stab {
 
         void S_or_SDG(int j, bool dg);
 
+        int piv_col(int row_number);
+
         void print() const; // Only used for printing state at intermediate stages
         // of the calculation when diagnosing errors
     }; // class AffineState

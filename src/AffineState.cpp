@@ -207,12 +207,38 @@ namespace stab {
     void AffineState::CZ(int j, int k) {
         if (r_ > 0) { // If psi is a computational basis state then A_ has
             // zero columns, so this block would do nothing anyway
-            Eigen::VectorXi a_j = A_.row(j).transpose();
-            Eigen::VectorXi a_k = A_.row(k).transpose();
-            Q_ += a_j * a_k.transpose() + a_k * a_j.transpose();
-            Q_.diagonal() += 2 * b_(k) * a_j;
-            Q_.diagonal() += 2 * b_(j) * a_k;
-            ReduceQ();
+
+            int pcj = piv_col(j);
+            int pck = piv_col(k);
+
+            if (pcj != -1 && pck != -1) { // Nice case since it takes time O(1)
+                Q_(pcj, pck) = (Q_(pcj, pck) + 1) % 2;
+                Q_(pck, pcj) = Q_(pcj, pck);
+                Q_(pcj, pcj) = (Q_(pcj, pcj) + 2 * b_(k)) % 4;
+                Q_(pck, pck) = (Q_(pck, pck) + 2 * b_(j)) % 4;
+            } else if (pcj != -1 && pck == -1) { // O(r_) time
+                Q_.col(j) += A_.row(k).transpose();
+                Q_.row(j) += A_.row(k);
+                Q_(pcj, pcj) += 2 * b_(k);
+                Q_.diagonal() += 2 * b_(j) * A_.row(k);
+
+                ReduceGramRowCol(j);
+                Q_.diagonal() = ReduceMod(Q_.diagonal(), 4);
+            } else if (pcj == -1 && pck != -1) { // Same as previous case but j and k swapped
+                Q_.col(k) += A_.row(j).transpose();
+                Q_.row(k) += A_.row(j);
+                Q_(pck, pck) += 2 * b_(j);
+                Q_.diagonal() += 2 * b_(k) * A_.row(j);
+
+                ReduceGramRowCol(k);
+                Q_.diagonal() = ReduceMod(Q_.diagonal(), 4);
+            } else { // Slow case since it takes time O(r_^2)
+                Q_ += A_.row(j).transpose() * A_.row(k) +
+                      A_.row(k).transpose() * A_.row(j);
+                Q_.diagonal() += 2 * b_(k) * A_.row(j);
+                Q_.diagonal() += 2 * b_(j) * A_.row(k);
+                ReduceQ(); // No guarantees about which coordinates will be modified, so no choice but to reduce everything
+            }
         }
         phase_ = (phase_ + 4 * b_(j) * b_(k)) % 8;
     }
@@ -264,26 +290,28 @@ namespace stab {
         // dg = true means we apply S^\dagger, dg = false means we apply S
         int sign = 1 - 2*int(dg);  // = +1 for S and -1 for S^\dagger
 
-        if (r_ > 0) {
-            bool is_pivot = false;
-            int pivcol;
-            for (int i = 0; i < r_; ++i) {
-                if (pivots_[i] == j) {
-                    is_pivot = true;
-                    pivcol = i;
-                }
-            }
-
-            if (is_pivot) {
+        if (r_ > 0) { // The lines below are irrelevant if r_ == 0
+            int pivcol = piv_col(j);
+            if (pivcol != -1) { // Special case that can be done in O(1) time.
                 Q_(pivcol, pivcol) =
                     (Q_(pivcol, pivcol) + sign * (1 - 2 * b_(j)) + 4) % 4;
-            } else {
+            } else { // In general takes O(r_) time
                 Eigen::VectorXi a_j = A_.row(j).transpose();
                 Q_ += sign * (1 - 2 * b_(j)) * a_j * a_j.transpose();
                 ReduceQ();
             }
         }
         phase_ = (phase_ + sign * 2 * b_(j)) % 8;
+    }
+
+    int AffineState::piv_col(int row_number) {
+        // Given a row number, return the index of the column j for in which that row has a pivot, and return -1 otherwise
+        for (int i = 0; i < r_; ++i) {
+            if (pivots_[i] == row_number) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     void AffineState::S(int j) { S_or_SDG(j, false); }

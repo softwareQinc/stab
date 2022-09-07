@@ -98,6 +98,7 @@ TEST(GenerateRandomStates, CheckNorms) {
         std::istringstream prog_stream(s);
         AffineState psi =
                 stab::qasm_simulator::simulate_and_return(prog_stream);
+
         Eigen::VectorXcd vec = psi.to_vec();
         success = (abs(vec.norm() - 1) < 1e-12);
         if (!success) {
