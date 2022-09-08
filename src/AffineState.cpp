@@ -158,13 +158,7 @@ namespace stab {
 // GATES:
     void AffineState::H(int j) {
         // Step 1: Find c.
-        int c = -1; // c = -1 will indicate that row j is not a pivot
-        for (int column_i = 0; column_i < r_; ++column_i) {
-            if (pivots_[column_i] == j) {
-                c = column_i;
-                break;
-            }
-        }
+        int c = piv_col(j); // c = -1 indicates that row j is not a pivot
 
         // Step 2. (Using -1 instead of 0 because of 0-indexing.)
         if (c > -1) {
