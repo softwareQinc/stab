@@ -13,8 +13,10 @@ int main() {
 
     using namespace stab;
 
-    std::string prog =
-        "OPENQASM 2.0;\n include \"qelib1.inc\";\n qreg q[3];\n h q[0];\n s q[0];\n x q[1];\n h q[2];\n";
+    std::string prog = "OPENQASM 2.0;\n"
+                       "include \"qelib1.inc\";\n"
+                       "qreg q[1];\n";
+
     std::istringstream prog_stream(prog);
     AffineState psi = stab::qasm_simulator::simulate_and_return(prog_stream);
     Eigen::VectorXcd vec = psi.to_vec();

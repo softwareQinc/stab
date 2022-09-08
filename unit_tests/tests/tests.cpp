@@ -127,7 +127,6 @@ TEST(RunRandomQASM, PerformMeasurements) {
 TEST(RunRandomQASM, LargeN) {
     // Check that we can simulate large circuits that wouldn't be possible with qpp
     for (int nq = 25; nq < 51; nq += 5) {
-        std::cout << "nq = " << nq << "\n";
         std::string s = random_qasm(nq, true);
         std::istringstream prog_stream(s);
         AffineState psi =

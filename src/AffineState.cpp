@@ -217,20 +217,20 @@ namespace stab {
                 Q_(pcj, pcj) = (Q_(pcj, pcj) + 2 * b_(k)) % 4;
                 Q_(pck, pck) = (Q_(pck, pck) + 2 * b_(j)) % 4;
             } else if (pcj != -1 && pck == -1) { // O(r_) time
-                Q_.col(j) += A_.row(k).transpose();
-                Q_.row(j) += A_.row(k);
+                Q_.col(pcj) += A_.row(k).transpose();
+                Q_.row(pcj) += A_.row(k);
                 Q_(pcj, pcj) += 2 * b_(k);
                 Q_.diagonal() += 2 * b_(j) * A_.row(k);
 
-                ReduceGramRowCol(j);
+                ReduceGramRowCol(pcj);
                 Q_.diagonal() = ReduceMod(Q_.diagonal(), 4);
             } else if (pcj == -1 && pck != -1) { // Same as previous case but j and k swapped
-                Q_.col(k) += A_.row(j).transpose();
-                Q_.row(k) += A_.row(j);
-                Q_(pck, pck) += 2 * b_(j);
+                Q_.col(pck) += A_.row(j).transpose();
+                Q_.row(pck) += A_.row(j);
+                Q_(pck, pck) += 2 * b_(j) + 8;
                 Q_.diagonal() += 2 * b_(k) * A_.row(j);
 
-                ReduceGramRowCol(k);
+                ReduceGramRowCol(pck);
                 Q_.diagonal() = ReduceMod(Q_.diagonal(), 4);
             } else { // Slow case since it takes time O(r_^2)
                 Q_ += A_.row(j).transpose() * A_.row(k) +
