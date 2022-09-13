@@ -21,7 +21,7 @@ if (WIN32)
     endif ()
 endif ()
 add_library(stab-common SHARED ${SOURCES})
-target_link_libraries(stab-common Eigen3::Eigen)
+target_link_libraries(stab-common Eigen3::Eigen ${QPP_LINK_DEPS} libqpp)
 
 add_executable(stab main.cpp)
 target_link_libraries(stab stab-common qasmtools ${QPP_LINK_DEPS} libqpp)
