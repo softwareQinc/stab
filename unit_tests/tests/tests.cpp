@@ -131,6 +131,12 @@ TEST(RunRandomQASM, LargeN) {
         std::istringstream prog_stream(s);
         AffineState psi =
             stab::qasm_simulator::simulate_and_return(prog_stream);
+        //psi.Sample(500);
+        //// .Sample does not change the state, so we can measure individually too
+        //psi.MeasureZ(5); // Just measure a few qubits
+        //psi.MeasureZ(10);
+        //psi.MeasureZ(15);
+        //psi.MeasureZ(20);
     }
 
     EXPECT_TRUE(true);

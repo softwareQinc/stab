@@ -6,6 +6,7 @@
 #include <bitset>
 
 #include <Eigen/Dense>
+#include <../../qpp/include/qpp.h>
 
 #include "AffineState.h"
 #include "random.h"
@@ -346,14 +347,27 @@ namespace stab {
         }
     }
 
-    Eigen::VectorXi AffineState::MeasureAll() { Eigen::VectorXi x;
-        x.setZero(n_);
-        for (int i = 0; i < n_; ++i) {
+    Eigen::VectorXi AffineState::MeasureAll() { 
+        Eigen::VectorXi x;
+        x.setZero(r_);
+        for (int i = 0; i < r_; ++i) {
             x(i) = random_bit();
         }
-        x = A_ * x + b_;
-        x = ReduceMod(x, 2);
-        return x;
+        return ReduceMod(A_ * x + b_, 2);
+    }
+
+    //std::map<Eigen::VectorXi, int, qpp::internal::HashEigen>
+    //AffineState::Sample(int nreps) { // TODO: Naive approach can be improved
+    //    std::map<Eigen::VectorXi, int> results;
+    //    for (int repnumber = 0; repnumber < nreps; ++repnumber) {
+    //        Eigen::VectorXi x = MeasureAll();
+    //        if (results.count(x) > 0) {
+    //            ++results[x];
+    //        } else {
+    //            results[x] = 1;
+    //        }
+    //    }
+    //    return results;
     }
 
     void AffineState::Reset(int j) {
@@ -381,7 +395,7 @@ namespace stab {
 
 
         Eigen::VectorXcd vec; // This will be the statevector
-        vec.setZero(pow(2, n_));
+        vec.setZero(int(pow(2, n_)));
         int ncols = A_.cols(); // Not using r_ since we sometimes will include a zero column during unit testing
         for (int k = 0; k < pow(2, ncols); ++k) {
             // For each x \in \{0,1\}^ncols, we now add the corresponding term to vec

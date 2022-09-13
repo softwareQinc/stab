@@ -1,5 +1,7 @@
 #include <iostream>
+#include <sstream>
 #include <fstream>
+#include <string>
 #include <random>
 #include <chrono>
 
@@ -57,11 +59,49 @@ std::string random_qasm(int nq, bool measure) {
 
 int main() {
     using namespace stab;
-    std::vector<std::pair<int, double>> times;
 
-    for (int nq = 1; nq < 500; nq += 10) {
+    AffineState psi(64);
+
+    std::fstream infile("random_64_stim.stim");
+    std::string line;
+    while (std::getline(infile, line)) {
+        std::istringstream iss(line);
+        std::string op;
+        int a, b;
+        iss >> op;
+        if (op == "tick") {
+            continue;
+        } else if (op == "S") {
+            iss >> a;
+            psi.S(a);
+        } else if (op == "H") {
+            iss >> a;
+            psi.H(a);
+        } else if (op == "M") {
+            iss >> a;
+            psi.MeasureZ(a);
+        } else if (op == "CNOT") {
+            iss >> a >> b;
+            psi.CX(a, b);
+        }
+    }
+
+    std::cout << psi.b();
+
+
+
+
+    /*std::vector<std::pair<int, double>> times;
+
+    for (int nq = 200; nq <=400; nq += 25) {
         std::string prog = random_qasm(nq, true);
         std::istringstream prog_stream(prog);
+
+        std::string nqstring = "circuit" + std::to_string(nq) + ".txt";
+        std::fstream qasm_file(nqstring.c_str(), std::fstream::out);
+        qasm_file << prog;
+        qasm_file.close();
+
         auto start = std::chrono::steady_clock::now();
         AffineState psi = stab::qasm_simulator::simulate_and_return(prog_stream);
         auto end = std::chrono::steady_clock::now();
@@ -74,7 +114,7 @@ int main() {
     for (auto p : times) {
         myfile << p.first << "," << p.second << "\n";
     }
-    myfile.close();
+    myfile.close();*/
 
     std::cout << std::endl;
 }
