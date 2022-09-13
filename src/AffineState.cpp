@@ -6,7 +6,6 @@
 #include <bitset>
 
 #include <Eigen/Dense>
-#include <../../qpp/include/qpp.h>
 
 #include "AffineState.h"
 #include "random.h"
