@@ -356,18 +356,18 @@ namespace stab {
         return ReduceMod(A_ * x + b_, 2);
     }
 
-    //std::map<Eigen::VectorXi, int, qpp::internal::HashEigen>
-    //AffineState::Sample(int nreps) { // TODO: Naive approach can be improved
-    //    std::map<Eigen::VectorXi, int> results;
-    //    for (int repnumber = 0; repnumber < nreps; ++repnumber) {
-    //        Eigen::VectorXi x = MeasureAll();
-    //        if (results.count(x) > 0) {
-    //            ++results[x];
-    //        } else {
-    //            results[x] = 1;
-    //        }
-    //    }
-    //    return results;
+    std::map<Eigen::VectorXi, int, qpp::internal::HashEigen>
+    AffineState::Sample(int nreps) { // TODO: Naive approach can be improved
+        std::map<Eigen::VectorXi, int, qpp::internal::HashEigen> results;
+        for (int repnumber = 0; repnumber < nreps; ++repnumber) {
+            Eigen::VectorXi x = MeasureAll();
+            if (results.count(x) > 0) {
+                ++results[x];
+            } else {
+                results[x] = 1;
+            }
+        }
+        return results;
     }
 
     void AffineState::Reset(int j) {
