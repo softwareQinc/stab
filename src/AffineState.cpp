@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <map>
@@ -19,11 +20,17 @@ namespace stab {
     }
 
     int AffineState::n() { return n_; }
+
     int AffineState::phase() { return phase_; }
+
     Eigen::MatrixXi AffineState::Q() { return Q_; }
+
     Eigen::MatrixXi AffineState::A() { return A_; }
+
     Eigen::VectorXi AffineState::b() { return b_; }
+
     std::map<int, int> AffineState::pivots() { return pivots_; }
+
     int AffineState::r() { return r_; }
 
 // Subroutines:
@@ -36,7 +43,7 @@ namespace stab {
 
     void AffineState::ReindexSubtColumn(int k, int c) {
         // Applies the update Column k of A <--- Column k - Column c
-        assert(c!=k);
+        assert(c != k);
         A_.col(k) += A_.col(c);
         A_.col(k) = ReduceMod(A_.col(k), 2);
 
@@ -130,7 +137,8 @@ namespace stab {
 
         // Step 4
         if (u % 2 == 1) {
-            Q_ += (u-2) * q * q.transpose(); // TODO: I believe that u-2 is correct, in agreement with the paper, but contrary to my email with the authors.
+            Q_ += (u - 2) * q *
+                  q.transpose(); // TODO: I believe that u-2 is correct, in agreement with the paper, but contrary to my email with the authors.
             ReduceQ();
             phase_ = (phase_ - u + 2) % 8;
             return;
@@ -273,7 +281,7 @@ namespace stab {
             }
         }
         for (int c = 0; c < r_; ++c) {
-            if (pivots_[c] == k  && c != cskip) {
+            if (pivots_[c] == k && c != cskip) {
                 pivots_[c] = j;
                 break;
             }
@@ -282,13 +290,13 @@ namespace stab {
 
     void AffineState::S_or_SDG(int j, bool dg) {
         // dg = true means we apply S^\dagger, dg = false means we apply S
-        int sign = 1 - 2*int(dg);  // = +1 for S and -1 for S^\dagger
+        int sign = 1 - 2 * int(dg);  // = +1 for S and -1 for S^\dagger
 
         if (r_ > 0) { // The lines below are irrelevant if r_ == 0
             int pivcol = piv_col(j);
             if (pivcol != -1) { // Special case that can be done in O(1) time.
                 Q_(pivcol, pivcol) =
-                    (Q_(pivcol, pivcol) + sign * (1 - 2 * b_(j)) + 4) % 4;
+                        (Q_(pivcol, pivcol) + sign * (1 - 2 * b_(j)) + 4) % 4;
             } else { // In general takes O(r_) time
                 Eigen::VectorXi a_j = A_.row(j).transpose();
                 Q_ += sign * (1 - 2 * b_(j)) * a_j * a_j.transpose();
@@ -346,25 +354,21 @@ namespace stab {
         }
     }
 
-    Eigen::VectorXi AffineState::MeasureAll() { 
-        Eigen::VectorXi x;
-        x.setZero(r_);
-        for (int i = 0; i < r_; ++i) {
-            x(i) = random_bit();
-        }
-        return ReduceMod(A_ * x + b_, 2);
+    std::vector<int> AffineState::MeasureAll() {
+        Eigen::VectorXi x(r_);
+        // x.setZero(r_); // no need, since we sized it first
+        std::for_each(x.data(), x.data() + x.size(), [](auto &elem) {
+            elem = random_bit();
+        });
+        Eigen::VectorXi tmp = ReduceMod(A_ * x + b_, 2);
+        return {tmp.data(), tmp.data() + tmp.size()};
     }
-    
-    std::unordered_map<Eigen::VectorXi, int, qpp::internal::HashEigen>
+
+    std::map<std::vector<int>, int>
     AffineState::Sample(int nreps) { // TODO: Naive approach can be improved
-        std::unordered_map<Eigen::VectorXi, int, qpp::internal::HashEigen> results;
+        std::map<std::vector<int>, int> results;
         for (int repnumber = 0; repnumber < nreps; ++repnumber) {
-            Eigen::VectorXi x = MeasureAll();
-            if (results.count(x) > 0) {
-                ++results[x];
-            } else {
-                results[x] = 1;
-            }
+            ++results[MeasureAll()];
         }
         return results;
     }
@@ -419,7 +423,7 @@ namespace stab {
             std::complex<double> phase = (2 * (x.transpose() * Q_ * x)[0] + phase_);
             vec[basis_state_number] += std::exp(i * pi * phase / 4.0);
         }
-        return vec / pow(2, ncols/2.0);
+        return vec / pow(2, ncols / 2.0);
     }
 
     std::ostream &operator<<(std::ostream &out, AffineState const &psi) {
@@ -432,12 +436,12 @@ namespace stab {
         }
         out << "b^T = " << psi.b_.transpose() << '\n';
         out << "pivots = ";
-        for (auto p : psi.pivots_) {
+        for (auto p: psi.pivots_) {
             out << "(" << p.first << ", " << p.second << "), ";
         }
 
         std::cout << "\n\n BASIS STATE DECOMPOSITION:\n";
-        
+
         // Very naive way of printing the state, but this will mainly be used
         // for debugging. We can always optimize it later if it's important.
         if (psi.r_ > 12) {
@@ -454,7 +458,7 @@ namespace stab {
                 Eigen::VectorXi ket = psi.A_ * x + psi.b_;
                 ket = ReduceMod(ket, 2);
                 std::string rel_phase;
-                int ampl = (2 * (x.transpose() * psi.Q_ * x)[0] + psi.phase_)%8;
+                int ampl = (2 * (x.transpose() * psi.Q_ * x)[0] + psi.phase_) % 8;
                 out << "exp(" << ampl << "i*pi/4) * "
                     << "|" << ket.transpose() << ">\n";
             }

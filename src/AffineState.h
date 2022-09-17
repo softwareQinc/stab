@@ -6,7 +6,6 @@
 #include <vector>
 #include <map>
 #include <random>
-#include <unordered_map>
 
 #include <qpp/qpp.h>
 
@@ -29,8 +28,8 @@ namespace stab {
 
         // Nonunitary operations
         int MeasureZ(int j); // Returns outcome and updates state
-        Eigen::VectorXi MeasureAll();
-        std::unordered_map<Eigen::VectorXi, int, qpp::internal::HashEigen> Sample(int nreps);
+        std::vector<int> MeasureAll();
+        std::map<std::vector<int>, int> Sample(int nreps);
         void Reset(int j); // Resets qubit j to |0>
 
         Eigen::VectorXcd to_vec();
@@ -38,6 +37,7 @@ namespace stab {
         friend std::ostream &operator<<(std::ostream &out, AffineState const &psi);
 
         // Get member variables:
+        // TODO: make this private, and use getters to retrieve them
         int n();
         int phase();
         Eigen::MatrixXi Q();
