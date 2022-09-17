@@ -19,19 +19,19 @@ namespace stab {
         b_.setZero(n);
     }
 
-    int AffineState::n() { return n_; }
+    int AffineState::n() const { return n_; }
 
-    int AffineState::phase() { return phase_; }
+    int AffineState::phase() const { return phase_; }
 
-    Eigen::MatrixXi AffineState::Q() { return Q_; }
+    Eigen::MatrixXi AffineState::Q() const { return Q_; }
 
-    Eigen::MatrixXi AffineState::A() { return A_; }
+    Eigen::MatrixXi AffineState::A() const { return A_; }
 
-    Eigen::VectorXi AffineState::b() { return b_; }
+    Eigen::VectorXi AffineState::b() const { return b_; }
 
-    std::map<int, int> AffineState::pivots() { return pivots_; }
+    std::map<int, int> AffineState::pivots() const { return pivots_; }
 
-    int AffineState::r() { return r_; }
+    int AffineState::r() const { return r_; }
 
 // Subroutines:
     void AffineState::ReduceGramRowCol(int c) {
@@ -354,7 +354,7 @@ namespace stab {
         }
     }
 
-    std::vector<int> AffineState::MeasureAll() {
+    std::vector<int> AffineState::MeasureAll() const {
         Eigen::VectorXi x(r_);
         // x.setZero(r_); // no need, since we sized it first
         std::for_each(x.data(), x.data() + x.size(), [](auto &elem) {
@@ -365,7 +365,7 @@ namespace stab {
     }
 
     std::map<std::vector<int>, int>
-    AffineState::Sample(int nreps) { // TODO: Naive approach can be improved
+    AffineState::Sample(int nreps) const { // TODO: Naive approach can be improved
         std::map<std::vector<int>, int> results;
         for (int repnumber = 0; repnumber < nreps; ++repnumber) {
             ++results[MeasureAll()];
@@ -388,7 +388,7 @@ namespace stab {
         Q_.diagonal() = qdiag;
     }
 
-    Eigen::VectorXcd AffineState::to_vec() {
+    Eigen::VectorXcd AffineState::to_vec() const {
         if (n_ > 16) {
             throw std::logic_error("Maximum number of qubits for statevector "
                                    "representation is 15");

@@ -17,34 +17,49 @@ namespace stab {
 
         // Unitary gates
         void CZ(int a, int b);
+
         void CX(int a, int b);
+
         void SWAP(int a, int b);
+
         void S(int j);
+
         void SDG(int j);
+
         void H(int a);
+
         void X(int j);
+
         void Y(int j);
+
         void Z(int j);
 
         // Nonunitary operations
         int MeasureZ(int j); // Returns outcome and updates state
-        std::vector<int> MeasureAll();
-        std::map<std::vector<int>, int> Sample(int nreps);
         void Reset(int j); // Resets qubit j to |0>
 
-        Eigen::VectorXcd to_vec();
+        std::vector<int> MeasureAll() const;
 
-        friend std::ostream &operator<<(std::ostream &out, AffineState const &psi);
+        std::map<std::vector<int>, int> Sample(int nreps) const;
+
+        Eigen::VectorXcd to_vec() const;
 
         // Get member variables:
-        // TODO: make this private, and use getters to retrieve them
-        int n();
-        int phase();
-        Eigen::MatrixXi Q();
-        Eigen::MatrixXi A();
-        Eigen::VectorXi b();
-        std::map<int, int> pivots();
-        int r();
+        int n() const;
+
+        int phase() const;
+
+        Eigen::MatrixXi Q() const;
+
+        Eigen::MatrixXi A() const;
+
+        Eigen::VectorXi b() const;
+
+        std::map<int, int> pivots() const;
+
+        int r() const;
+
+        friend std::ostream &operator<<(std::ostream &out, AffineState const &psi);
 
     private:
         // State is represented by exp(i*pi*phase_/8)/sqrt(2^r_) \sum_{x \in
