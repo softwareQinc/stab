@@ -20,10 +20,10 @@ if (WIN32)
         set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     endif ()
 endif ()
-add_library(stab-common SHARED ${SOURCES})
+add_library(stab-common SHARED ${SOURCES} "benchmarking/stab_tests.cpp")
 target_link_libraries(stab-common qasmtools Eigen3::Eigen ${QPP_LINK_DEPS} libqpp)
 
-add_executable(stab main.cpp)
+add_executable(stab main.cpp "benchmarking/stab_tests.cpp")
 target_link_libraries(stab stab-common qasmtools ${QPP_LINK_DEPS} libqpp)
 
 #### Unit testing
