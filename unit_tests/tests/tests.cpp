@@ -58,8 +58,53 @@ namespace {
         return qasm;
     }
 
-    std::pair<std::vector<std::string>, std::vector<std::string>>
-    get_random_circuits(int nmax) {
+    
+
+    std::string random_identity(int nq) {
+        // Generate random OPENQASM 2.0 string with or without measurements
+        std::vector<std::string> gates = {"x",   "y",  "z",  "s",   "h",
+                                          "sdg", "cx", "cz", "swap"};
+
+        std::string qasm = "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[" +
+                           std::to_string(nq) + "];\n";
+        std::string inverse = "";
+
+        // Now add some gates
+        for (int gatenumber = 0; gatenumber < pow(nq, 3); ++gatenumber) {
+            int randno = random_integer(0, 8);
+            std::string gate = gates[randno];
+        
+            int q1 = random_integer(0, nq - 1);
+            int q2; // Only needed if randno > 5:
+            if (randno > 5) {
+                if (nq == 1) { // Can't have two-qubit gates in this case
+                    continue;
+                }
+                q2 = q1;
+                while (q2 == q1) {
+                    q2 = random_integer(0, nq - 1);
+                }
+            }
+
+            std::string next_line = gate + " q[" + std::to_string(q1) + "]";
+            if (randno > 5) {
+                next_line += ",q[" + std::to_string(q2) + "]";
+            }
+            next_line += ";\n";
+            qasm += next_line;
+
+            inverse = next_line + inverse;
+            if (gate == "s" || gate == "sdg") { // Lazy way to handle inverses
+                inverse = next_line + inverse;
+                inverse = next_line + inverse;
+            }
+
+        }
+
+        return qasm + inverse;
+    }
+
+    std::pair<std::vector<std::string>, std::vector<std::string>> get_random_circuits(int nmax) {
         std::pair<std::vector<std::string>, std::vector<std::string>> all_circs;
         for (int n = 1; n <= nmax; ++n) {
             std::string s = random_qasm(n, false);
@@ -131,15 +176,31 @@ TEST(RunRandomQASM, LargeN) {
         std::istringstream prog_stream(s);
         AffineState psi =
             stab::qasm_simulator::simulate_and_return(prog_stream);
-        //psi.Sample(500);
-        //// .Sample does not change the state, so we can measure individually too
-        //psi.MeasureZ(5); // Just measure a few qubits
-        //psi.MeasureZ(10);
-        //psi.MeasureZ(15);
-        //psi.MeasureZ(20);
+        psi.Sample(500);
+        // .Sample does not change the state, so we can measure individually too
+        psi.MeasureZ(5); // Just measure a few qubits
+        psi.MeasureZ(10);
+        psi.MeasureZ(15);
+        psi.MeasureZ(20);
     }
 
     EXPECT_TRUE(true);
+}
+
+TEST(RunRandomQASM, Identity) {
+    // Make sure that random identity circuits indeed evaluate to |0^n>
+    bool success = true;
+    for (int nq = 20; nq <= 50; nq += 10) {
+        std::string s = random_identity(nq);
+        std::istringstream prog_stream(s);
+        AffineState psi =
+            stab::qasm_simulator::simulate_and_return(prog_stream);
+        if (psi.r() != 0 || psi.A().size() != 0 || psi.Q().size() != 0 || psi.phase() != 0 || !psi.b().isZero()) {
+            success = false;
+            break;
+        }
+    }
+    EXPECT_TRUE(success);
 }
 
 TEST(CompareWithQPP, NoMeasurements) {
@@ -158,7 +219,7 @@ TEST(CompareWithQPP, NoMeasurements) {
         qpp::ket vec2 = qe.execute().get_psi();
         // Recall qpp::ket is just Eigen::VectorXcd
 
-        if ((vec1 - vec2).norm() > 1e-12) {
+        if ((vec1-vec2).norm() > 1e-12) {
             success = false;
             break;
         }
