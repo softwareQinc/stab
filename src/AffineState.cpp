@@ -334,12 +334,22 @@ namespace stab {
         X(j);
     }
 
-    int AffineState::MeasureZ(int j) {
-        // Check whether deterministic:
-        if (A_.row(j).isZero()) {
-            return b_(j);
-        } else {
-            int beta = random_bit();
+    int AffineState::MeasureZ(int j, bool postselect,
+                              int postselected_outcome) {
+        // Default parameters are postselect=false, postselected_outcome=0
+        if (A_.row(j).isZero()) { // Deterministic case
+            if (postselect && b_(j) != postselected_outcome) {
+                throw std::logic_error("Postselection impossible");
+            } else {
+                return b_(j);
+            }
+        } else { // Random case
+            int beta;
+            if (postselect) {
+                beta = postselected_outcome;
+            } else {
+                beta = random_bit();
+            }
             int k;
             for (int i = 0; i < r_; i++) { // TODO: Optimize
                 if (A_(j, i) != 0) {

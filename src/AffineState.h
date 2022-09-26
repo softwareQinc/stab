@@ -35,7 +35,8 @@ namespace stab {
         void Z(int j);
 
         // Nonunitary operations
-        int MeasureZ(int j); // Returns outcome and updates state
+        int MeasureZ(int j, bool postselect = false,
+                     int postselected_outcome = 0);
         void Reset(int j); // Resets qubit j to |0>
 
         std::vector<int> MeasureAll() const;
