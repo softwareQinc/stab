@@ -4,7 +4,7 @@
 #include <cassert>
 #include <iostream>
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <random>
 
 #include <qpp/qpp.h>
@@ -56,7 +56,7 @@ namespace stab {
 
         Eigen::VectorXi b() const;
 
-        std::map<int, int> pivots() const;
+        std::unordered_map<int, int> pivots() const;
 
         int r() const;
 
@@ -71,7 +71,7 @@ namespace stab {
         Eigen::MatrixXi Q_;
         Eigen::MatrixXi A_;
         Eigen::VectorXi b_;
-        std::map<int, int>
+        std::unordered_map<int, int>
                 pivots_; // AKA "principal index map." Keys are columns, values are the
         // rows that contain pivots_ in those columns. Note that we are
         // using zero-indexing, so the smallest key (assuming the map
@@ -92,7 +92,7 @@ namespace stab {
 
         void MakePrincipal(int c, int j);
 
-        void ReselectPrincipalRow(int j, int c);
+        bool ReselectPrincipalRow(int j, int c);
 
         void ZeroColumnElim(int c);
 

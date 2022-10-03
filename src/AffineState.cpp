@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
-#include <map>
 #include <random>
 #include <vector>
 #include <bitset>
@@ -29,7 +28,7 @@ namespace stab {
 
     Eigen::VectorXi AffineState::b() const { return b_; }
 
-    std::map<int, int> AffineState::pivots() const { return pivots_; }
+    std::unordered_map<int, int> AffineState::pivots() const { return pivots_; }
 
     int AffineState::r() const { return r_; }
 
@@ -44,13 +43,14 @@ namespace stab {
     void AffineState::ReindexSubtColumn(int k, int c) {
         // Applies the update Column k of A <--- Column k - Column c
         assert(c != k);
-        A_.col(k) += A_.col(c);
-        A_.col(k) = ReduceMod(A_.col(k), 2);
+        for (int row = 0; row < n_; ++row) {
+            if (A_(row, c) == 1) {
+                A_(row, k) = (A_(row, k) + 1) % 2;
+            }
+        }
 
-        //int qcc = Q_(c, c); // TODO: Check this
         Q_.col(k) -= Q_.col(c);
         Q_.row(k) -= Q_.row(c);
-        //Q_(k, k) += qcc;
         ReduceGramRowCol(k);
     }
 
@@ -73,7 +73,7 @@ namespace stab {
         pivots_[c] = j;
     }
 
-    void AffineState::ReselectPrincipalRow(int j, int c) {
+    bool AffineState::ReselectPrincipalRow(int j, int c) {
         int j_star = -1; // Equivalent to j_star = 0 in the paper (but we need to
         // use -1 because of 0-indexing)
         for (int jj = 0; jj < n_;
@@ -85,7 +85,10 @@ namespace stab {
         }
         if (j_star != -1) {
             MakePrincipal(c, j_star);
-        } // (else, do nothing since reselecting row is impossible)
+            return true;
+        } else {
+            return false;
+        }
     }
 
     void AffineState::FixFinalBit(int z) {
@@ -106,10 +109,8 @@ namespace stab {
         // Step 3:
         if (z == 1) { // ReduceMod is relatively expensive, so it makes sense to check whether z == 1
             Q_.diagonal() += 2 * q;
-            //Q_ += 2 * q.asDiagonal(); TODO: Probably fine to remove this
             Q_.diagonal() = ReduceMod(Q_.diagonal(), 4);
-            b_ += a;
-            b_ = ReduceMod(b_, 2);
+            b_ = ReduceMod(b_ + a, 2);
             phase_ = (phase_ + 2 * u) % 8;
         }
 
@@ -167,19 +168,17 @@ namespace stab {
     void AffineState::H(int j) {
         // Step 1: Find c.
         int c = piv_col(j); // c = -1 indicates that row j is not a pivot
-
         // Step 2. (Using -1 instead of 0 because of 0-indexing.)
-        if (c > -1) {
-            ReselectPrincipalRow(j, c);
-            if (pivots_[c] != j) { // Check if reselection was successful
-                c = -1; // Indicates that row j is not/no longer a pivot
+        if (c != -1) {
+            if (ReselectPrincipalRow(j, c)) {
+                c = -1;
             }
         }
 
         // Step 3:
-        Eigen::VectorXi atilde;
-        atilde.setZero(r_ + 1);
+        Eigen::VectorXi atilde = Eigen::VectorXi::Zero(r_ + 1);
         atilde(Eigen::seq(0, r_ - 1)) = A_.row(j).transpose();
+        Eigen::VectorXi atildetrans = atilde.transpose();
 
         // Step 4:
         A_.row(j).setZero();
@@ -188,11 +187,10 @@ namespace stab {
         A_(j, r_) = 1;
         pivots_[r_] = j;
 
-
         // Step 5:
         Q_.conservativeResize(r_ + 1, r_ + 1);
-        Q_.row(r_) = atilde.transpose();
-        Q_.col(r_) = atilde.transpose();
+        Q_.row(r_) = atildetrans;
+        Q_.col(r_) = atildetrans;
         Q_(r_, r_) = 2 * b_(j);
 
         // Step 6:
@@ -298,9 +296,23 @@ namespace stab {
                 Q_(pivcol, pivcol) =
                         (Q_(pivcol, pivcol) + sign * (1 - 2 * b_(j)) + 4) % 4;
             } else { // In general takes O(r_) time
-                Eigen::VectorXi a_j = A_.row(j).transpose();
-                Q_ += sign * (1 - 2 * b_(j)) * a_j * a_j.transpose();
-                ReduceQ();
+                std::vector<int> Aj_nonzeros;
+                for (int k = 0; k < r_; ++k) {
+                    if (A_(j, k) == 1) {
+                        Aj_nonzeros.push_back(k);
+                    }
+                }
+
+                for (int row : Aj_nonzeros) {
+                    for (int col : Aj_nonzeros) {
+                        Q_(row, col) += sign * (1 - 2 * b_(j));
+                        if (row == col) {
+                            Q_(row, col) = (Q_(row, col) + 4) % 4;
+                        } else {
+                            Q_(row, col) = (Q_(row, col) + 2) % 2;
+                        }
+                    }
+                }
             }
         }
         phase_ = (phase_ + sign * 2 * b_(j)) % 8;
@@ -308,12 +320,11 @@ namespace stab {
 
     int AffineState::piv_col(int row_number) {
         // Given a row number, return the index of the column j for in which that row has a pivot, and return -1 otherwise
-        for (int i = 0; i < r_; ++i) {
-            if (pivots_[i] == row_number) {
-                return i;
-            }
-        }
-        return -1;
+        auto it = pivots_.find(row_number);
+        if (it != pivots_.end())
+            return it->first;
+        else
+            return -1;
     }
 
     void AffineState::S(int j) { S_or_SDG(j, false); }

@@ -9,6 +9,8 @@ find_package(qpp REQUIRED)
 include_directories(${PROJECT_SOURCE_DIR}/src)
 file(GLOB SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 
+#include_directories(${PROJECT_SOURCE_DIR}/simplex/src/include)
+
 #### qasmtools_stab library
 add_library(qasmtools INTERFACE)
 target_include_directories(qasmtools INTERFACE
