@@ -36,39 +36,39 @@ namespace stab {
 
 // Subroutines:
     void AffineState::ReduceGramRowCol(int c) {
-        int new_qcc = (4 + (*Q_(c, c) % 4)) % 4; // Need to store this since it gets reduced mod 2 below
-        Q_.row(c) = ReduceMod(Q_.row(c), 2);
-        Q_.col(c) = ReduceMod(Q_.col(c), 2);
-        Q_(c, c) = new_qcc;
+        int new_qcc = (4 + ((*Q_)(c, c) % 4)) % 4; // Need to store since gets reduced mod 2 below
+        Q_->row(c) = ReduceMod(Q_->row(c), 2);
+        Q_->col(c) = ReduceMod(Q_->col(c), 2);
+        (*Q_)(c, c) = new_qcc;
     }
 
     void AffineState::ReindexSubtColumn(int k, int c) {
         // Applies the update Column k of A <--- Column k - Column c
         assert(c != k);
         for (int row = 0; row < n_; ++row) {
-            if (A_(row, c) == 1) {
-                A_(row, k) = (A_(row, k) + 1) % 2;
+            if ((*A_)(row, c) == 1) {
+                (*A_)(row, k) = ((*A_)(row, k) + 1) % 2;
             }
         }
 
-        Q_.col(k) -= Q_.col(c);
-        Q_.row(k) -= Q_.row(c);
+        Q_->col(k) -= Q_->col(c);
+        Q_->row(k) -= Q_->row(c);
         ReduceGramRowCol(k);
     }
 
     void AffineState::ReindexSwapColumns(int k, int c) {
         if (c != k) {
-            A_.col(k).swap(A_.col(c));
-            Q_.col(k).swap(Q_.col(c));
-            Q_.row(k).swap(Q_.row(c));
+            A_->col(k).swap(A_->col(c));
+            Q_->col(k).swap(Q_->col(c));
+            Q_->row(k).swap(Q_->row(c));
             std::swap(pivots_.at(k), pivots_.at(c));
         }
     }
 
     void AffineState::MakePrincipal(int c, int j) {
-        assert(A_(j, c) != 0);
+        assert((*A_)(j, c) != 0);
         for (int k = 0; k < r_; ++k) {
-            if (k != c && A_(j, k) != 0) {
+            if (k != c && (*A_)(j, k) != 0) {
                 ReindexSubtColumn(k, c);
             }
         }
@@ -80,7 +80,7 @@ namespace stab {
         // use -1 because of 0-indexing)
         for (int jj = 0; jj < n_;
              ++jj) { //TODO: Choose optimal j_star (see paper)
-            if (A_(jj, c) != 0 && jj != j) {
+            if ((*A_)(jj, c) != 0 && jj != j) {
                 j_star = jj;
                 break;
             }
@@ -97,21 +97,24 @@ namespace stab {
         assert(r_ > 0);
 
         // Step 1:
-        Eigen::VectorXi a = A_.col(r_ - 1); // r_ - 1 because of 0-indexing
+        Eigen::VectorXi a = A_->col(r_ - 1); // r_ - 1 because of 0-indexing
         Eigen::VectorXi q;
         if (r_ > 1) { // If r == 1 then the line below throws an error due to r_ - 2
-            q = Q_(Eigen::seq(0, r_ - 2), r_ - 1);
+            q = (*Q_)(Eigen::seq(0, r_ - 2), r_ - 1);
         }
-        int u = Q_(r_ - 1, r_ - 1) % 4;
+        int u = (*Q_)(r_ - 1, r_ - 1) % 4;
 
         // Step 2:
-        A_.conservativeResize(Eigen::NoChange, r_ - 1); // Keep only first r_ - 1 columns
-        Q_.conservativeResize(r_ - 1, r_ - 1);
+        A_->col(r_ - 1).setZero(); // Set to zero before removing since this col will persist in Amaster_
+        Q_->col(r_ - 1).setZero(); // Ditto
+        Q_->row(r_ - 1).setZero(); // Ditto
+        A_ = std::make_unique<block_t>(Amaster_, n_, r_ - 1, 0, 0); // Resize view
+        Q_ = std::make_unique<block_t>(Qmaster_, r_ - 1, r_ - 1, 0, 0);
 
         // Step 3:
         if (z == 1) { // ReduceMod is relatively expensive, so it makes sense to check whether z == 1
-            Q_.diagonal() += 2 * q;
-            Q_.diagonal() = ReduceMod(Q_.diagonal(), 4);
+            Q_->diagonal() += 2 * q;
+            Q_->diagonal() = ReduceMod(Q_->diagonal(), 4);
             b_ = ReduceMod(b_ + a, 2);
             phase_ = (phase_ + 2 * u) % 8;
         }
@@ -128,20 +131,22 @@ namespace stab {
         ReindexSwapColumns(c, r_); // Use r_ instead of r_+1 here because of 0-indexing
 
         // Step 2:
-        Eigen::VectorXi q = Q_(Eigen::seq(0, r_ - 1), r_); // Step 2.
-        int u = Q_(r_, r_) % 4;
+        Eigen::VectorXi q = (*Q_)(Eigen::seq(0, r_ - 1), r_); // Step 2.
+        int u = (*Q_)(r_, r_) % 4;
 
         // Step 3:
-        A_.conservativeResize(Eigen::NoChange, r_); // A^(2) from paper
-        Q_.conservativeResize(r_, r_); // Q^(2) from paper
+        // No need to set A_->col(r_) to zero since it's already zero
+        A_ = std::make_unique<block_t>(Amaster_, n_, r_ , 0, 0);
+        Q_->row(r_).setZero();
+        Q_->col(r_).setZero();
+        Q_ = std::make_unique<block_t>(Qmaster_, r_, r_, 0, 0);
 
         // Step 3.5:
         pivots_.erase(r_); // <-- Both parts of the if statement in Step 4 require us to do this
 
         // Step 4
         if (u % 2 == 1) {
-            Q_ += (u - 2) * q *
-                  q.transpose(); // TODO: I believe that u-2 is correct, in agreement with the paper, but contrary to my email with the authors.
+            (*Q_) += (u - 2) * q * q.transpose();
             ReduceQ();
             phase_ = (phase_ - u + 2) % 8;
             return;
@@ -188,21 +193,23 @@ namespace stab {
 
         // Step 3:
         Eigen::VectorXi atilde = Eigen::VectorXi::Zero(r_ + 1);
-        atilde(Eigen::seq(0, r_ - 1)) = A_.row(j).transpose();
+        atilde(Eigen::seq(0, r_ - 1)) = A_->row(j).transpose();
         Eigen::VectorXi atildetrans = atilde.transpose();
 
         // Step 4:
-        A_.row(j).setZero();
-        A_.conservativeResize(Eigen::NoChange, r_ + 1);
-        A_.col(r_).setZero();
-        A_(j, r_) = 1;
+        A_->row(j).setZero();
+        A_ = std::make_unique<block_t>(Amaster_, n_, r_ + 1, 0, 0);
+        // Note that the new column of A_ is already zero
+        (*A_)(j, r_) = 1;
         pivots_[r_] = j;
 
         // Step 5:
-        Q_.conservativeResize(r_ + 1, r_ + 1);
-        Q_.row(r_) = atildetrans;
-        Q_.col(r_) = atildetrans;
-        Q_(r_, r_) = 2 * b_(j);
+        Q_->row(j).setZero();
+        Q_->col(j).setZero();
+        Q_ = std::make_unique<block_t>(Qmaster_, r_ + 1, r_ + 1, 0, 0);
+        Q_->row(r_) = atildetrans;
+        Q_->col(r_) = atildetrans;
+        (*Q_)(r_, r_) = 2 * b_(j);
 
         // Step 6:
         b_(j) = 0;
@@ -223,31 +230,31 @@ namespace stab {
             int pck = piv_col(k);
 
             if (pcj != -1 && pck != -1) { // Nice case since it takes time O(1)
-                Q_(pcj, pck) = (Q_(pcj, pck) + 1) % 2;
-                Q_(pck, pcj) = Q_(pcj, pck);
-                Q_(pcj, pcj) = (Q_(pcj, pcj) + 2 * b_(k)) % 4;
-                Q_(pck, pck) = (Q_(pck, pck) + 2 * b_(j)) % 4;
+                (*Q_)(pcj, pck) = ((*Q_)(pcj, pck) + 1) % 2;
+                (*Q_)(pck, pcj) = (*Q_)(pcj, pck);
+                (*Q_)(pcj, pcj) = ((*Q_)(pcj, pcj) + 2 * b_(k)) % 4;
+                (*Q_)(pck, pck) = ((*Q_)(pck, pck) + 2 * b_(j)) % 4;
             } else if (pcj != -1 && pck == -1) { // O(r_) time
-                Q_.col(pcj) += A_.row(k).transpose();
-                Q_.row(pcj) += A_.row(k);
-                Q_(pcj, pcj) += 2 * b_(k);
-                Q_.diagonal() += 2 * b_(j) * A_.row(k);
+                Q_->col(pcj) += A_->row(k).transpose();
+                Q_->row(pcj) += A_->row(k);
+                (*Q_)(pcj, pcj) += 2 * b_(k);
+                Q_->diagonal() += 2 * b_(j) * A_->row(k);
 
                 ReduceGramRowCol(pcj);
-                Q_.diagonal() = ReduceMod(Q_.diagonal(), 4);
+                Q_->diagonal() = ReduceMod(Q_->diagonal(), 4);
             } else if (pcj == -1 && pck != -1) { // Same as previous case but j and k swapped
-                Q_.col(pck) += A_.row(j).transpose();
-                Q_.row(pck) += A_.row(j);
-                Q_(pck, pck) += 2 * b_(j) + 8;
-                Q_.diagonal() += 2 * b_(k) * A_.row(j);
+                Q_->col(pck) += A_->row(j).transpose();
+                Q_->row(pck) += A_->row(j);
+                (*Q_)(pck, pck) += 2 * b_(j) + 8;
+                Q_->diagonal() += 2 * b_(k) * A_->row(j);
 
                 ReduceGramRowCol(pck);
-                Q_.diagonal() = ReduceMod(Q_.diagonal(), 4);
+                Q_->diagonal() = ReduceMod(Q_->diagonal(), 4);
             } else { // Slow case since it takes time O(r_^2)
-                Q_ += A_.row(j).transpose() * A_.row(k) +
-                      A_.row(k).transpose() * A_.row(j);
-                Q_.diagonal() += 2 * b_(k) * A_.row(j);
-                Q_.diagonal() += 2 * b_(j) * A_.row(k);
+                (*Q_) += A_->row(j).transpose() * A_->row(k) +
+                      A_->row(k).transpose() * A_->row(j);
+                Q_->diagonal() += 2 * b_(k) * A_->row(j);
+                Q_->diagonal() += 2 * b_(j) * A_->row(k);
                 ReduceQ(); // No guarantees about which coordinates will be modified, so no choice but to reduce everything
             }
         }
@@ -265,8 +272,8 @@ namespace stab {
         }
 
         // Step 2:
-        A_.row(j) += A_.row(h);
-        A_.row(j) = ReduceMod(A_.row(j), 2);
+        A_->row(j) += A_->row(h);
+        A_->row(j) = ReduceMod(A_->row(j), 2);
 
         // Step 3:
         b_(j) = (b_(j) + b_(h)) % 2;
@@ -279,7 +286,7 @@ namespace stab {
 
     void AffineState::SWAP(int j, int k) {
         // TODO: Probably better way to update pivots_
-        A_.row(j).swap(A_.row(k));
+        A_->row(j).swap(A_->row(k));
         b_.row(j).swap(b_.row(k));
         int cskip = -1;
         for (int c = 0; c < r_; ++c) {
@@ -304,23 +311,23 @@ namespace stab {
         if (r_ > 0) { // The lines below are irrelevant if r_ == 0
             int pivcol = piv_col(j);
             if (pivcol != -1) { // Special case that can be done in O(1) time.
-                Q_(pivcol, pivcol) =
-                        (Q_(pivcol, pivcol) + sign * (1 - 2 * b_(j)) + 4) % 4;
+                (*Q_)(pivcol, pivcol) =
+                        ((*Q_)(pivcol, pivcol) + sign * (1 - 2 * b_(j)) + 4) % 4;
             } else { // In general takes O(r_) time
                 std::vector<int> Aj_nonzeros;
                 for (int k = 0; k < r_; ++k) {
-                    if (A_(j, k) == 1) {
+                    if ((*A_)(j, k) == 1) {
                         Aj_nonzeros.push_back(k);
                     }
                 }
 
                 for (int row : Aj_nonzeros) {
                     for (int col : Aj_nonzeros) {
-                        Q_(row, col) += sign * (1 - 2 * b_(j));
+                        (*Q_)(row, col) += sign * (1 - 2 * b_(j));
                         if (row == col) {
-                            Q_(row, col) = (Q_(row, col) + 4) % 4;
+                            (*Q_)(row, col) = ((*Q_)(row, col) + 4) % 4;
                         } else {
-                            Q_(row, col) = (Q_(row, col) + 2) % 2;
+                            (*Q_)(row, col) = ((*Q_)(row, col) + 2) % 2;
                         }
                     }
                 }
@@ -337,8 +344,8 @@ namespace stab {
 
     void AffineState::Z(int j) {
         phase_ = (phase_ + 4 * (b_(j))) % 8;
-        Q_.diagonal() += 2 * A_.row(j);
-        Q_.diagonal() = ReduceMod(Q_.diagonal(), 4);
+        Q_->diagonal() += 2 * A_->row(j);
+        Q_->diagonal() = ReduceMod(Q_->diagonal(), 4);
     }
 
     void AffineState::Y(int j) {
@@ -350,7 +357,7 @@ namespace stab {
     int AffineState::MeasureZ(int j, bool postselect,
                               int postselected_outcome) {
         // Default parameters are postselect=false, postselected_outcome=0
-        if (A_.row(j).isZero()) { // Deterministic case
+        if (A_->row(j).isZero()) { // Deterministic case
             if (postselect && b_(j) != postselected_outcome) {
                 throw std::logic_error("Postselection impossible");
             } else {
@@ -365,7 +372,7 @@ namespace stab {
             }
             int k;
             for (int i = 0; i < r_; i++) { // TODO: Optimize
-                if (A_(j, i) != 0) {
+                if ((*A_)(j, i) != 0) {
                     k = i;
                     break;
                 }
@@ -383,7 +390,7 @@ namespace stab {
         std::for_each(x.data(), x.data() + x.size(), [](auto &elem) {
             elem = random_bit();
         });
-        Eigen::VectorXi tmp = ReduceMod(A_ * x + b_, 2);
+        Eigen::VectorXi tmp = ReduceMod((*A_) * x + b_, 2);
         return {tmp.data(), tmp.data() + tmp.size()};
     }
 
@@ -405,10 +412,10 @@ namespace stab {
 
     void AffineState::ReduceQ() {
         // Reduces Q mod 4 on the diagonal and mod 2 elsewhere
-        Eigen::VectorXi qdiag = Q_.diagonal();
+        Eigen::VectorXi qdiag = Q_->diagonal();
         qdiag = ReduceMod(qdiag, 4);
-        Q_ = ReduceMod(Q_, 2);
-        Q_.diagonal() = qdiag;
+        (*Q_) = ReduceMod((*Q_), 2);
+        Q_->diagonal() = qdiag;
     }
 
     Eigen::VectorXcd AffineState::to_vec() const {
@@ -422,7 +429,7 @@ namespace stab {
 
         Eigen::VectorXcd vec; // This will be the statevector
         vec.setZero(int(pow(2, n_)));
-        int ncols = A_.cols(); // Not using r_ since we sometimes will include a zero column during unit testing
+        int ncols = A_->cols(); // Not using r_ since we sometimes will include a zero column during unit testing
         for (int k = 0; k < pow(2, ncols); ++k) {
             // For each x \in \{0,1\}^ncols, we now add the corresponding term to vec
             // First, let x = vector whose entries are the binary digits of k:
@@ -434,7 +441,7 @@ namespace stab {
             }
 
             // Figure out which basis state x results in:
-            Eigen::VectorXi ket = A_ * x + b_;
+            Eigen::VectorXi ket = (*A_) * x + b_;
             ket = ReduceMod(ket, 2);
             // "ket" is the binary representation of some number basis_state_number. We need to add the correct amplitude into vec[basis_state_number]. Note that AffineState puts the zero-th qubit on the left, but most people put it on the right, so we also make this conversion.
 
@@ -443,7 +450,7 @@ namespace stab {
                 basis_state_number += int(ket(j) * pow(2, n_ - 1 - j)); // Conversion
             }
 
-            std::complex<double> phase = (2 * (x.transpose() * Q_ * x)[0] + phase_);
+            std::complex<double> phase = (2 * (x.transpose() * (*Q_) * x)[0] + phase_);
             vec[basis_state_number] += std::exp(i * pi * phase / 4.0);
         }
         return vec / pow(2, ncols / 2.0);
@@ -454,8 +461,8 @@ namespace stab {
         out << "phase = exp(" << psi.phase_ << "*i*pi/4)\n";
         out << "r = " << psi.r_ << "\n";
         if (psi.r_ > 0) { // If psi is a computational basis state, no need to print this stuff
-            out << "Q = " << std::endl << psi.Q_ << '\n';
-            out << "A = " << std::endl << psi.A_ << '\n';
+            out << "Q = " << std::endl << (*psi.Q_) << '\n';
+            out << "A = " << std::endl << (*psi.A_) << '\n';
         }
         out << "b^T = " << psi.b_.transpose() << '\n';
         out << "pivots = ";
@@ -478,10 +485,10 @@ namespace stab {
                     x(j) = int(bs[j]);
                 }
 
-                Eigen::VectorXi ket = psi.A_ * x + psi.b_;
+                Eigen::VectorXi ket = (*psi.A_) * x + psi.b_;
                 ket = ReduceMod(ket, 2);
                 std::string rel_phase;
-                int ampl = (2 * (x.transpose() * psi.Q_ * x)[0] + psi.phase_) % 8;
+                int ampl = (2 * (x.transpose() * (*psi.Q_) * x)[0] + psi.phase_) % 8;
                 out << "exp(" << ampl << "i*pi/4) * "
                     << "|" << ket.transpose() << ">\n";
             }
