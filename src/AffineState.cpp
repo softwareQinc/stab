@@ -11,13 +11,26 @@
 #include "random.h"
 
 namespace stab {
-// Initialization:
+    // constructor (initialization):
     AffineState::AffineState(int n) : n_{n}, phase_{0}, r_{0} {
         Qmaster_.setZero(n, n);
         Amaster_.setZero(n, n + 1); // We sometimes need an extra column for workspace
         Q_ = std::make_unique<block_t>(Qmaster_, 0, 0, 0, 0);
         A_ = std::make_unique<block_t>(Amaster_, n, 0, 0, 0);
         b_.setZero(n);
+    }
+
+    // copy
+    AffineState::AffineState(const AffineState& other){
+        n_ = other.n_;
+        phase_ = other.phase_;
+        r_ = other.r_;
+        Qmaster_ = other.Qmaster_;
+        Amaster_ = other.Amaster_;
+        Q_ = std::make_unique<block_t>(*other.Q_); // deep copy
+        A_ = std::make_unique<block_t>(*other.A_); // deep copy
+        b_ = other.b_;
+        pivots_ = other.pivots_;
     }
 
     int AffineState::n() const { return n_; }

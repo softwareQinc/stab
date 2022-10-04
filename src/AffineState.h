@@ -17,6 +17,8 @@ namespace stab {
 
         explicit AffineState(int n);
 
+        AffineState(const AffineState &other);
+
         // Unitary gates
         void CZ(int a, int b);
 
@@ -39,6 +41,7 @@ namespace stab {
         // Nonunitary operations
         int MeasureZ(int j, bool postselect = false,
                      int postselected_outcome = 0);
+
         void Reset(int j); // Resets qubit j to |0>
 
         std::vector<int> MeasureAll() const;
