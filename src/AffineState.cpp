@@ -13,8 +13,10 @@
 namespace stab {
 // Initialization:
     AffineState::AffineState(int n) : n_{n}, phase_{0}, r_{0} {
-        Q_.setZero(0, 0);
-        A_.setZero(n, 0);
+        Qmaster_.setZero(n, n);
+        Amaster_.setZero(n, n + 1); // We sometimes need an extra column for workspace
+        Q_ = std::make_unique<block_t>(Qmaster_, 0, 0, 0, 0);
+        A_ = std::make_unique<block_t>(Amaster_, n, 0, 0, 0);
         b_.setZero(n);
     }
 
@@ -22,9 +24,9 @@ namespace stab {
 
     int AffineState::phase() const { return phase_; }
 
-    Eigen::MatrixXi AffineState::Q() const { return Q_; }
+    Eigen::MatrixXi AffineState::Q() const { return *Q_; }
 
-    Eigen::MatrixXi AffineState::A() const { return A_; }
+    Eigen::MatrixXi AffineState::A() const { return *A_; }
 
     Eigen::VectorXi AffineState::b() const { return b_; }
 
@@ -34,7 +36,7 @@ namespace stab {
 
 // Subroutines:
     void AffineState::ReduceGramRowCol(int c) {
-        int new_qcc = (4 + (Q_(c, c) % 4)) % 4; // Need to store this since it gets reduced mod 2 below
+        int new_qcc = (4 + (*Q_(c, c) % 4)) % 4; // Need to store this since it gets reduced mod 2 below
         Q_.row(c) = ReduceMod(Q_.row(c), 2);
         Q_.col(c) = ReduceMod(Q_.col(c), 2);
         Q_(c, c) = new_qcc;
@@ -162,6 +164,15 @@ namespace stab {
             // At this point, A_ and Q_ should have r_ columns each. Also, since we removed the zero column in Step 3, the rank of A_ should be r_
             FixFinalBit(u / 2);
         }
+    }
+
+    int AffineState::piv_col(int row_number) {
+        // Given a row number, return the index of the column j for in which that row has a pivot, and return -1 otherwise
+        auto it = pivots_.find(row_number);
+        if (it != pivots_.end())
+            return it->first;
+        else
+            return -1;
     }
 
 // GATES:
@@ -316,15 +327,6 @@ namespace stab {
             }
         }
         phase_ = (phase_ + sign * 2 * b_(j)) % 8;
-    }
-
-    int AffineState::piv_col(int row_number) {
-        // Given a row number, return the index of the column j for in which that row has a pivot, and return -1 otherwise
-        auto it = pivots_.find(row_number);
-        if (it != pivots_.end())
-            return it->first;
-        else
-            return -1;
     }
 
     void AffineState::S(int j) { S_or_SDG(j, false); }

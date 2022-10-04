@@ -9,6 +9,8 @@
 
 #include <qpp/qpp.h>
 
+using block_t = Eigen::Block<Eigen::MatrixXi>;
+
 namespace stab {
     class AffineState {
     public:
@@ -68,8 +70,10 @@ namespace stab {
         // has rank r_ <= n_.
         int n_;     // number of qubits
         int phase_; // global phase_ is exp(i*pi*phase_/4)
-        Eigen::MatrixXi Q_;
-        Eigen::MatrixXi A_;
+        Eigen::MatrixXi Qmaster_;
+        Eigen::MatrixXi Amaster_;
+        std::unique_ptr<block_t> Q_; // Points to active block of Qmaster_ (top-left corner)
+        std::unique_ptr<block_t> A_; // Points to active block of A_ (leftmost columns)
         Eigen::VectorXi b_;
         std::unordered_map<int, int>
                 pivots_; // AKA "principal index map." Keys are columns, values are the
@@ -78,7 +82,7 @@ namespace stab {
         // is nonempty) will always be 0, and the corresponding value
         // is the index of the row that has a pivot in column 0.
         // TODO: pivots can probably be changed to an std::unordered_map
-        int r_; // Technically unnecessary since this is usually A_.cols() or rank of A_, but it is
+        int r_; // Technically unnecessary since this is usually the rank of A_, but it is
         // handy to not have to declare it each time
 
         // Subroutines
