@@ -1,10 +1,12 @@
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <fstream>
 #include <string>
 #include <random>
 #include <chrono>
 #include <vector>
+#include <memory>
 
 #include <Eigen/Dense>
 #include <qpp/qpp.h>
@@ -67,56 +69,23 @@ stab::AffineState run_stim(std::fstream& infile, const int& nq) {
 }
 
 int main() {
-    Eigen::MatrixXi master(3, 3);
-    master << 1, 2, 3, 4, 5, 6, 7, 8, 9;
+    Eigen::MatrixXi m(4, 4);
+    m << 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16;
+    std::cout << m << "\n\n";
 
-    Eigen::Ref<Eigen::MatrixXi> submat = master.topLeftCorner(2, 2);
-    std::cout << submat << "\n\n";
+    using block_t = Eigen::Block<Eigen::MatrixXi>; // this is our type
+    // this will be our smart pointer to matrix that'll be shared by all member functions;
+    // takes care of memory allocations/de-allocations automatically with zero overhead
+    std::unique_ptr<block_t> Q;
 
-    submat.row(0) += submat.row(1);
-    std::cout << submat << "\n\n";
-    submat.row(0).swap(submat.row(1));
-    std::cout << submat;
+    Q = std::make_unique<block_t>(m, 0, 0, 2, 2);
+    std::cout << Q->rows() << "x" << Q->cols() << "\n";
+    std::cout << *Q << "\n\n"; // use *Q to dereference the pointer and refer to the matrix
+    (*Q)(0, 0) = 100;
 
+    Q = std::make_unique<block_t>(m, 0, 0, 3, 3);
+    std::cout << Q->rows() << "x" << Q->cols() << "\n";
+    std::cout << *Q << "\n\n";
 
+    std::cout << (*Q) * (*Q) << std::endl;
 }
-
-//int main() {
-//    using namespace stab;
-//
-//    std::cout << "Beginning tests \n";
-//
-//    std::vector<std::pair<int, double>> times;
-//    int nmin = 200;
-//    int nmax = 1000;
-//    int step = 25;
-//    int copies_per_n = 3;
-//
-//
-//    for (int n = nmin; n <= nmax; n += step) {
-//        std::cout << n << "\n";
-//        //for (int j = 1; j <= copies_per_n; ++j) {
-//            /*std::string fname = R"(C:\Users\Alex\Desktop\random_shallow_nonuniform_stims\)";
-//            fname += "random_clifford_" + std::to_string(n) + "_" +
-//                     std::to_string(j) + ".stim";
-//            std::fstream infile(fname);*/
-//
-//            AffineState psi(n);
-//            auto start = std::chrono::steady_clock::now();
-//            //run_stim(infile, n);
-//            for (int q = 0; q < n; ++q) {
-//                psi.H(q);
-//            }
-//            auto end = std::chrono::steady_clock::now();
-//            std::chrono::duration<double> diff = end - start;
-//
-//            times.push_back(std::make_pair(n, diff.count()));
-//        //}
-//    }
-//
-//    std::fstream myfile("just_hadamards_skip_initialization.csv", std::fstream::out);
-//    for (auto p : times) {
-//        myfile << p.first << "," << p.second << "\n";
-//    }
-//    myfile.close();
-//}
