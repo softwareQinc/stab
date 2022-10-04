@@ -23,8 +23,11 @@ endif ()
 add_library(stab-common SHARED ${SOURCES} "benchmarking/stab_tests.cpp")
 target_link_libraries(stab-common qasmtools Eigen3::Eigen ${QPP_LINK_DEPS} libqpp)
 
-add_executable(stab main.cpp "benchmarking/stab_tests.cpp")
+add_executable(stab main.cpp)
 target_link_libraries(stab stab-common qasmtools ${QPP_LINK_DEPS} libqpp)
+
+add_executable(bench_stab benchmarking/stab_tests.cpp)
+target_link_libraries(bench_stab stab-common)
 
 #### Unit testing
 add_subdirectory(${CMAKE_SOURCE_DIR}/unit_tests)
