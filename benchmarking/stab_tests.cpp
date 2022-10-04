@@ -1,40 +1,40 @@
-//#include <iostream>
-//#include <sstream>
-//#include <fstream>
-//#include <string>
-//#include <chrono>
-//#include <vector>
-//
-//#include "AffineState.h"
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <string>
+#include <chrono>
+#include <vector>
 
-//stab::AffineState run_stim(std::fstream& infile, const int& nq) {
-//    stab::AffineState psi(nq);
-//    std::string line;
-//    while (std::getline(infile, line)) {
-//        std::istringstream iss(line);
-//        std::string op;
-//        int a, b;
-//        iss >> op;
-//        if (op == "tick") {
-//            continue;
-//        } else if (op == "S") {
-//            iss >> a;
-//            psi.S(a);
-//        } else if (op == "H") {
-//            iss >> a;
-//            psi.H(a);
-//        } else if (op == "M") {
-//            iss >> a;
-//            psi.MeasureZ(a);
-//        } else if (op == "CNOT") {
-//            iss >> a >> b;
-//            psi.CX(a, b);
-//        } else { // Some error just for now
-//            assert(false);
-//        }
-//    }
-//    return psi;
-//}
+#include "AffineState.h"
+
+stab::AffineState run_stim(std::fstream& infile, const int& nq) {
+    stab::AffineState psi(nq);
+    std::string line;
+    while (std::getline(infile, line)) {
+        std::istringstream iss(line);
+        std::string op;
+        int a, b;
+        iss >> op;
+        if (op == "tick") {
+            continue;
+        } else if (op == "S") {
+            iss >> a;
+            psi.S(a);
+        } else if (op == "H") {
+            iss >> a;
+            psi.H(a);
+        } else if (op == "M") {
+            iss >> a;
+            psi.MeasureZ(a);
+        } else if (op == "CNOT") {
+            iss >> a >> b;
+            psi.CX(a, b);
+        } else { // Some error just for now
+            assert(false);
+        }
+    }
+    return psi;
+}
 
 
 int main() {
