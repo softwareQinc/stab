@@ -23,7 +23,7 @@ class QASMSimulator final : public ast::Visitor {
 
     stab::AffineState run(ast::Program& prog) {
         prog.accept(*this);
-        return psi;
+        return std::move(psi);
     }
 
     // Variables
