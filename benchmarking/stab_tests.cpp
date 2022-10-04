@@ -59,7 +59,7 @@ int main() {
             auto end = std::chrono::steady_clock::now();
             std::chrono::duration<double> diff = end - start;
 
-            times.push_back(std::make_pair(n, diff.count()));
+            times.emplace_back(n, diff.count());
         }
     }
 
