@@ -70,7 +70,7 @@ int main() {
 
     std::vector<std::pair<int, double>> times;
     int nmin = 200;
-    int nmax = 1000;
+    int nmax = 400;
     int step = 25;
     int copies_per_n = 3;
 
@@ -93,7 +93,7 @@ int main() {
         }
     }
 
-    std::fstream myfile("better_shallow_nonunif.csv", std::fstream::out);
+    std::fstream myfile("after_reducemod_changes.csv", std::fstream::out);
     for (auto p : times) {
         myfile << p.first << "," << p.second << "\n";
     }

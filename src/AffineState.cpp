@@ -51,23 +51,21 @@ namespace stab {
 
 // Subroutines:
     void AffineState::ReduceGramRowCol(int c) {
-        int new_qcc = (4 + ((*Q_)(c, c) % 4)) % 4; // Need to store since gets reduced mod 2 below
-        Q_->row(c) = ReduceMod(Q_->row(c), 2);
-        Q_->col(c) = ReduceMod(Q_->col(c), 2);
+        int new_qcc = (*Q_)(c, c) % 4; // Need to store since gets reduced mod 2 below
+        Q_->row(c) = ReduceMod2(Q_->row(c));
+        Q_->col(c) = ReduceMod2(Q_->col(c));
         (*Q_)(c, c) = new_qcc;
     }
 
     void AffineState::ReindexSubtColumn(int k, int c) {
         // Applies the update Column k of A <--- Column k - Column c
         assert(c != k);
-        for (int row = 0; row < n_; ++row) {
-            if ((*A_)(row, c) == 1) {
-                (*A_)(row, k) = ((*A_)(row, k) + 1) % 2;
-            }
-        }
 
-        Q_->col(k) -= Q_->col(c);
-        Q_->row(k) -= Q_->row(c);
+        A_->col(k) += A_->col(c);
+        A_->col(k) = ReduceMod2(A_->col(k));
+
+        Q_->col(k) += Q_->col(c);
+        Q_->row(k) += Q_->row(c);
         ReduceGramRowCol(k);
     }
 
@@ -129,8 +127,8 @@ namespace stab {
         // Step 3:
         if (z == 1) { // ReduceMod is relatively expensive, so it makes sense to check whether z == 1
             Q_->diagonal() += 2 * q;
-            Q_->diagonal() = ReduceMod(Q_->diagonal(), 4);
-            b_ = ReduceMod(b_ + a, 2);
+            Q_->diagonal() = ReduceMod4(Q_->diagonal());
+            b_ = ReduceMod2(b_ + a);
             phase_ = (phase_ + 2 * u) % 8;
         }
 
@@ -161,7 +159,7 @@ namespace stab {
 
         // Step 4
         if (u % 2 == 1) {
-            (*Q_) += (u - 2) * q * q.transpose();
+            (*Q_) += (u + 2) * q * q.transpose();
             ReduceQ();
             phase_ = (phase_ - u + 2) % 8;
             return;
@@ -244,7 +242,7 @@ namespace stab {
             int pck = piv_col(k);
 
             if (pcj != -1 && pck != -1) { // Nice case since it takes time O(1)
-                (*Q_)(pcj, pck) = ((*Q_)(pcj, pck) + 1) % 2;
+                (*Q_)(pcj, pck) ^= 1;
                 (*Q_)(pck, pcj) = (*Q_)(pcj, pck);
                 (*Q_)(pcj, pcj) = ((*Q_)(pcj, pcj) + 2 * b_(k)) % 4;
                 (*Q_)(pck, pck) = ((*Q_)(pck, pck) + 2 * b_(j)) % 4;
@@ -255,15 +253,15 @@ namespace stab {
                 Q_->diagonal() += 2 * b_(j) * A_->row(k);
 
                 ReduceGramRowCol(pcj);
-                Q_->diagonal() = ReduceMod(Q_->diagonal(), 4);
+                Q_->diagonal() = ReduceMod4(Q_->diagonal());
             } else if (pcj == -1 && pck != -1) { // Same as previous case but j and k swapped
                 Q_->col(pck) += A_->row(j).transpose();
                 Q_->row(pck) += A_->row(j);
-                (*Q_)(pck, pck) += 2 * b_(j) + 8;
+                (*Q_)(pck, pck) += 2 * b_(j);
                 Q_->diagonal() += 2 * b_(k) * A_->row(j);
 
                 ReduceGramRowCol(pck);
-                Q_->diagonal() = ReduceMod(Q_->diagonal(), 4);
+                Q_->diagonal() = ReduceMod4(Q_->diagonal());
             } else { // Slow case since it takes time O(r_^2)
                 (*Q_) += A_->row(j).transpose() * A_->row(k) +
                          A_->row(k).transpose() * A_->row(j);
@@ -287,7 +285,7 @@ namespace stab {
 
         // Step 2:
         A_->row(j) += A_->row(h);
-        A_->row(j) = ReduceMod(A_->row(j), 2);
+        A_->row(j) = ReduceMod2(A_->row(j));
 
         // Step 3:
         b_(j) = (b_(j) + b_(h)) % 2;
@@ -337,29 +335,29 @@ namespace stab {
 
                 for (int row: Aj_nonzeros) {
                     for (int col: Aj_nonzeros) {
-                        (*Q_)(row, col) += sign * (1 - 2 * b_(j));
+                        (*Q_)(row, col) += 4 + sign * (1 - 2 * b_(j));
                         if (row == col) {
-                            (*Q_)(row, col) = ((*Q_)(row, col) + 4) % 4;
+                            (*Q_)(row, col) %= 4;
                         } else {
-                            (*Q_)(row, col) = ((*Q_)(row, col) + 2) % 2;
+                            (*Q_)(row, col) %= 2;
                         }
                     }
                 }
             }
         }
-        phase_ = (phase_ + sign * 2 * b_(j)) % 8;
+        phase_ = (phase_ + sign * 2 * b_(j) + 8) % 8;
     }
 
     void AffineState::S(int j) { S_or_SDG(j, false); }
 
     void AffineState::SDG(int j) { S_or_SDG(j, true); }
 
-    void AffineState::X(int j) { b_(j) = (b_(j) + 1) % 2; }
+    void AffineState::X(int j) { b_(j) ^= 1; }
 
     void AffineState::Z(int j) {
         phase_ = (phase_ + 4 * (b_(j))) % 8;
         Q_->diagonal() += 2 * A_->row(j);
-        Q_->diagonal() = ReduceMod(Q_->diagonal(), 4);
+        Q_->diagonal() = ReduceMod4(Q_->diagonal());
     }
 
     void AffineState::Y(int j) {
@@ -404,7 +402,7 @@ namespace stab {
         std::for_each(x.data(), x.data() + x.size(), [](auto &elem) {
             elem = random_bit();
         });
-        Eigen::VectorXi tmp = ReduceMod((*A_) * x + b_, 2);
+        Eigen::VectorXi tmp = ReduceMod2((*A_) * x + b_);
         return {tmp.data(), tmp.data() + tmp.size()};
     }
 
@@ -426,9 +424,8 @@ namespace stab {
 
     void AffineState::ReduceQ() {
         // Reduces Q mod 4 on the diagonal and mod 2 elsewhere
-        Eigen::VectorXi qdiag = Q_->diagonal();
-        qdiag = ReduceMod(qdiag, 4);
-        (*Q_) = ReduceMod((*Q_), 2);
+        Eigen::VectorXi qdiag = ReduceMod4(Q_->diagonal());
+        (*Q_) = ReduceMod2((*Q_));
         Q_->diagonal() = qdiag;
     }
 
@@ -456,7 +453,7 @@ namespace stab {
 
             // Figure out which basis state x results in:
             Eigen::VectorXi ket = (*A_) * x + b_;
-            ket = ReduceMod(ket, 2);
+            ket = ReduceMod2(ket);
             // "ket" is the binary representation of some number basis_state_number. We need to add the correct amplitude into vec[basis_state_number]. Note that AffineState puts the zero-th qubit on the left, but most people put it on the right, so we also make this conversion.
 
             int basis_state_number = 0;
