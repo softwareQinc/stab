@@ -16,21 +16,23 @@ namespace stab {
         Qmaster_.setZero(n + 1, n + 1);
         Amaster_.setZero(n, n + 1); // We sometimes need an extra column for workspace
         Q_ = std::make_unique<block_t>(Qmaster_, 0, 0, 0, 0);
-        A_ = std::make_unique<block_t>(Amaster_, 0, 0, n_, 0);
+        A_ = std::make_unique<block_t>(Amaster_, 0, 0, n, 0);
         b_.setZero(n);
     }
 
     // copy
-    AffineState::AffineState(const AffineState& other){
+    AffineState::AffineState(const AffineState &other) {
         n_ = other.n_;
         phase_ = other.phase_;
         r_ = other.r_;
         Qmaster_ = other.Qmaster_;
         Amaster_ = other.Amaster_;
-        Q_ = std::make_unique<block_t>(*other.Q_); // deep copy
-        A_ = std::make_unique<block_t>(*other.A_); // deep copy
         b_ = other.b_;
         pivots_ = other.pivots_;
+
+        //TODO check this
+        Q_ = std::make_unique<block_t>(Qmaster_, 0, 0, other.Q_->rows(), other.Q_->cols());
+        A_ = std::make_unique<block_t>(Amaster_, 0, 0, other.A_->rows(), other.A_->cols());
     }
 
     int AffineState::n() const { return n_; }
@@ -263,7 +265,7 @@ namespace stab {
                 Q_->diagonal() = ReduceMod(Q_->diagonal(), 4);
             } else { // Slow case since it takes time O(r_^2)
                 (*Q_) += A_->row(j).transpose() * A_->row(k) +
-                      A_->row(k).transpose() * A_->row(j);
+                         A_->row(k).transpose() * A_->row(j);
                 Q_->diagonal() += 2 * b_(k) * A_->row(j);
                 Q_->diagonal() += 2 * b_(j) * A_->row(k);
                 ReduceQ(); // No guarantees about which coordinates will be modified, so no choice but to reduce everything
@@ -332,8 +334,8 @@ namespace stab {
                     }
                 }
 
-                for (int row : Aj_nonzeros) {
-                    for (int col : Aj_nonzeros) {
+                for (int row: Aj_nonzeros) {
+                    for (int col: Aj_nonzeros) {
                         (*Q_)(row, col) += sign * (1 - 2 * b_(j));
                         if (row == col) {
                             (*Q_)(row, col) = ((*Q_)(row, col) + 4) % 4;
@@ -452,6 +454,9 @@ namespace stab {
             }
 
             // Figure out which basis state x results in:
+            std::cout << A_->rows() << "x" << A_->cols() << std::endl;
+            std::cout << x.rows() << "x" << x.cols() << std::endl;
+            std::cout << b_.rows() << "x" << b_.cols() << std::endl;
             Eigen::VectorXi ket = (*A_) * x + b_;
             ket = ReduceMod(ket, 2);
             // "ket" is the binary representation of some number basis_state_number. We need to add the correct amplitude into vec[basis_state_number]. Note that AffineState puts the zero-th qubit on the left, but most people put it on the right, so we also make this conversion.
