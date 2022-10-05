@@ -93,13 +93,13 @@ namespace stab {
     bool AffineState::ReselectPrincipalRow(int j, int c) {
         int j_star = -1; // Equivalent to j_star = 0 in the paper (but we need to
         // use -1 because of 0-indexing)
-        for (int jj = 0; jj < n_;
-             ++jj) { //TODO: Choose optimal j_star (see paper)
+        for (int jj = 0; jj < n_; ++jj) {
             if ((*A_)(jj, c) != 0 && jj != j) {
                 j_star = jj;
                 break;
             }
         }
+
         if (j_star != -1) {
             MakePrincipal(c, j_star);
             return true;
@@ -109,7 +109,7 @@ namespace stab {
     }
 
     void AffineState::FixFinalBit(int z) {
-        assert(r_ > 0);
+        assert(r_ != 0);
 
         // Step 1:
         Eigen::VectorXi a = A_->col(r_ - 1); // r_ - 1 because of 0-indexing
@@ -123,7 +123,7 @@ namespace stab {
         A_->col(r_ - 1).setZero(); // Set to zero before removing since this col will persist in Amaster_
         Q_->col(r_ - 1).setZero(); // Ditto
         Q_->row(r_ - 1).setZero(); // Ditto
-        A_ = std::make_unique<block_t>(Amaster_, 0, 0, n_, r_ - 1); // Resize view
+        A_ = std::make_unique<block_t>(Amaster_, 0, 0, n_, r_ - 1);
         Q_ = std::make_unique<block_t>(Qmaster_, 0, 0, r_ - 1, r_ - 1);
 
         // Step 3:
@@ -188,11 +188,12 @@ namespace stab {
 
     int AffineState::piv_col(int row_number) {
         // Given a row number, return the index of the column j for in which that row has a pivot, and return -1 otherwise
-        auto it = pivots_.find(row_number);
-        if (it != pivots_.end())
-            return it->first;
-        else
-            return -1;
+        for (int i = 0; i < r_; ++i) {
+            if (pivots_[i] == row_number) {
+                return i;
+            }
+        }
+        return -1;
     }
 
 // GATES:
@@ -217,7 +218,7 @@ namespace stab {
         // Note that the new column of A_ is already zero
         (*A_)(j, r_) = 1;
         pivots_[r_] = j;
-        
+
         // Step 5:
         Q_ = std::make_unique<block_t>(Qmaster_, 0, 0, r_ + 1, r_ + 1);
         Q_->row(r_) = atildetrans;
@@ -454,9 +455,6 @@ namespace stab {
             }
 
             // Figure out which basis state x results in:
-            std::cout << A_->rows() << "x" << A_->cols() << std::endl;
-            std::cout << x.rows() << "x" << x.cols() << std::endl;
-            std::cout << b_.rows() << "x" << b_.cols() << std::endl;
             Eigen::VectorXi ket = (*A_) * x + b_;
             ket = ReduceMod(ket, 2);
             // "ket" is the binary representation of some number basis_state_number. We need to add the correct amplitude into vec[basis_state_number]. Note that AffineState puts the zero-th qubit on the left, but most people put it on the right, so we also make this conversion.
@@ -486,29 +484,29 @@ namespace stab {
             out << "(" << p.first << ", " << p.second << "), ";
         }
 
-        std::cout << "\n\n BASIS STATE DECOMPOSITION:\n";
+        //std::cout << "\n\n BASIS STATE DECOMPOSITION:\n";
 
-        // Very naive way of printing the state, but this will mainly be used
-        // for debugging. We can always optimize it later if it's important.
-        if (psi.r_ > 12) {
-            std::cout << "Too many amplitudes to print\n";
-        } else {
-            Eigen::VectorXi x;
-            x.setZero(psi.r_);
-            for (int i = 0; i < pow(2, psi.r_); ++i) {
-                std::bitset<16> bs(i);         // Get binary string
-                for (int j = 0; j < psi.r_; ++j) { // Cast binary string to x
-                    x(j) = int(bs[j]);
-                }
+        //// Very naive way of printing the state, but this will mainly be used
+        //// for debugging. We can always optimize it later if it's important.
+        //if (psi.r_ > 12) {
+        //    std::cout << "Too many amplitudes to print\n";
+        //} else {
+        //    Eigen::VectorXi x;
+        //    x.setZero(psi.r_);
+        //    for (int i = 0; i < pow(2, psi.r_); ++i) {
+        //        std::bitset<16> bs(i);         // Get binary string
+        //        for (int j = 0; j < psi.r_; ++j) { // Cast binary string to x
+        //            x(j) = int(bs[j]);
+        //        }
 
-                Eigen::VectorXi ket = (*psi.A_) * x + psi.b_;
-                ket = ReduceMod(ket, 2);
-                std::string rel_phase;
-                int ampl = (2 * (x.transpose() * (*psi.Q_) * x)[0] + psi.phase_) % 8;
-                out << "exp(" << ampl << "i*pi/4) * "
-                    << "|" << ket.transpose() << ">\n";
-            }
-        }
+        //        Eigen::VectorXi ket = (*psi.A_) * x + psi.b_;
+        //        ket = ReduceMod(ket, 2);
+        //        std::string rel_phase;
+        //        int ampl = (2 * (x.transpose() * (*psi.Q_) * x)[0] + psi.phase_) % 8;
+        //        out << "exp(" << ampl << "i*pi/4) * "
+        //            << "|" << ket.transpose() << ">\n";
+        //    }
+        //}
         return out;
     }
 

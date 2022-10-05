@@ -68,13 +68,6 @@ stab::AffineState run_stim(std::fstream& infile, const int& nq) {
 
 int main() {
     using namespace stab;
-
-    AffineState psi(3);
-    psi.H(0);
-    psi.H(1);
-    psi.H(2);
-    psi.H(2);
-    std::cout << psi;
 }
 
 //int main() {
