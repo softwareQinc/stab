@@ -13,10 +13,10 @@
 namespace stab {
     // constructor (initialization):
     AffineState::AffineState(int n) : n_{n}, phase_{0}, r_{0} {
-        Qmaster_.setZero(n, n);
+        Qmaster_.setZero(n + 1, n + 1);
         Amaster_.setZero(n, n + 1); // We sometimes need an extra column for workspace
         Q_ = std::make_unique<block_t>(Qmaster_, 0, 0, 0, 0);
-        A_ = std::make_unique<block_t>(Amaster_, n, 0, 0, 0);
+        A_ = std::make_unique<block_t>(Amaster_, 0, 0, n_, 0);
         b_.setZero(n);
     }
 
@@ -121,8 +121,8 @@ namespace stab {
         A_->col(r_ - 1).setZero(); // Set to zero before removing since this col will persist in Amaster_
         Q_->col(r_ - 1).setZero(); // Ditto
         Q_->row(r_ - 1).setZero(); // Ditto
-        A_ = std::make_unique<block_t>(Amaster_, n_, r_ - 1, 0, 0); // Resize view
-        Q_ = std::make_unique<block_t>(Qmaster_, r_ - 1, r_ - 1, 0, 0);
+        A_ = std::make_unique<block_t>(Amaster_, 0, 0, n_, r_ - 1); // Resize view
+        Q_ = std::make_unique<block_t>(Qmaster_, 0, 0, r_ - 1, r_ - 1);
 
         // Step 3:
         if (z == 1) { // ReduceMod is relatively expensive, so it makes sense to check whether z == 1
@@ -149,10 +149,10 @@ namespace stab {
 
         // Step 3:
         // No need to set A_->col(r_) to zero since it's already zero
-        A_ = std::make_unique<block_t>(Amaster_, n_, r_ , 0, 0);
+        A_ = std::make_unique<block_t>(Amaster_, 0, 0, n_, r_ );
         Q_->row(r_).setZero();
         Q_->col(r_).setZero();
-        Q_ = std::make_unique<block_t>(Qmaster_, r_, r_, 0, 0);
+        Q_ = std::make_unique<block_t>(Qmaster_, 0, 0, r_, r_);
 
         // Step 3.5:
         pivots_.erase(r_); // <-- Both parts of the if statement in Step 4 require us to do this
@@ -211,15 +211,13 @@ namespace stab {
 
         // Step 4:
         A_->row(j).setZero();
-        A_ = std::make_unique<block_t>(Amaster_, n_, r_ + 1, 0, 0);
+        A_ = std::make_unique<block_t>(Amaster_, 0, 0, n_, r_ + 1);
         // Note that the new column of A_ is already zero
         (*A_)(j, r_) = 1;
         pivots_[r_] = j;
-
+        
         // Step 5:
-        Q_->row(j).setZero();
-        Q_->col(j).setZero();
-        Q_ = std::make_unique<block_t>(Qmaster_, r_ + 1, r_ + 1, 0, 0);
+        Q_ = std::make_unique<block_t>(Qmaster_, 0, 0, r_ + 1, r_ + 1);
         Q_->row(r_) = atildetrans;
         Q_->col(r_) = atildetrans;
         (*Q_)(r_, r_) = 2 * b_(j);
