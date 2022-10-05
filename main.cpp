@@ -16,9 +16,6 @@
 
 stab::AffineState run_stim(std::fstream& infile, const int& nq) {
     stab::AffineState psi(nq);
-    for (int i = 0; i < nq; ++i) {  //
-        psi.H(i);
-    }  //
     std::string line;
     while (std::getline(infile, line)) {
         std::istringstream iss(line);
@@ -32,7 +29,7 @@ stab::AffineState run_stim(std::fstream& infile, const int& nq) {
             psi.S(a);
         } else if (op == "H") {
             iss >> a;
-            //psi.H(a);
+            psi.H(a);
         } else if (op == "S_DAG") {
             iss >> a;
             psi.SDG(a);
@@ -68,44 +65,37 @@ stab::AffineState run_stim(std::fstream& infile, const int& nq) {
 
 int main() {
     using namespace stab;
-}
 
-//int main() {
-//    using namespace stab;
-//
-//    std::cout << "Beginning tests \n";
-//
-//    std::vector<std::pair<int, double>> times;
-//    int nmin = 200;
-//    int nmax = 1000;
-//    int step = 25;
-//    int copies_per_n = 3;
-//
-//
-//    for (int n = nmin; n <= nmax; n += step) {
-//        std::cout << n << "\n";
-//        //for (int j = 1; j <= copies_per_n; ++j) {
-//            /*std::string fname = R"(C:\Users\Alex\Desktop\random_shallow_nonuniform_stims\)";
-//            fname += "random_clifford_" + std::to_string(n) + "_" +
-//                     std::to_string(j) + ".stim";
-//            std::fstream infile(fname);*/
-//
-//            AffineState psi(n);
-//            auto start = std::chrono::steady_clock::now();
-//            //run_stim(infile, n);
-//            for (int q = 0; q < n; ++q) {
-//                psi.H(q);
-//            }
-//            auto end = std::chrono::steady_clock::now();
-//            std::chrono::duration<double> diff = end - start;
-//
-//            times.push_back(std::make_pair(n, diff.count()));
-//        //}
-//    }
-//
-//    std::fstream myfile("just_hadamards_skip_initialization.csv", std::fstream::out);
-//    for (auto p : times) {
-//        myfile << p.first << "," << p.second << "\n";
-//    }
-//    myfile.close();
-//}
+    std::cout << "Beginning tests \n";
+
+    std::vector<std::pair<int, double>> times;
+    int nmin = 200;
+    int nmax = 1000;
+    int step = 25;
+    int copies_per_n = 3;
+
+
+    for (int n = nmin; n <= nmax; n += step) {
+        std::cout << n << "\n";
+        for (int j = 1; j <= copies_per_n; ++j) {
+            std::string fname = R"(C:\Users\Alex\Desktop\random_shallow_nonuniform_stims\)";
+            fname += "random_clifford_" + std::to_string(n) + "_" +
+                     std::to_string(j) + ".stim";
+            std::fstream infile(fname);
+
+            auto start = std::chrono::steady_clock::now();
+            run_stim(infile, n);
+            auto end = std::chrono::steady_clock::now();
+            std::chrono::duration<double> diff = end - start;
+
+            times.push_back(std::make_pair(n, diff.count()));
+            std::cout << diff.count() << "\n";
+        }
+    }
+
+    std::fstream myfile("better_shallow_nonunif.csv", std::fstream::out);
+    for (auto p : times) {
+        myfile << p.first << "," << p.second << "\n";
+    }
+    myfile.close();
+}
