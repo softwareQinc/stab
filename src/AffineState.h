@@ -9,7 +9,9 @@
 
 #include <qpp/qpp.h>
 
-using block_t = Eigen::Block<Eigen::MatrixXi>;
+using mat_u_t = Eigen::Matrix<unsigned, Eigen::Dynamic, Eigen::Dynamic>;
+using vec_u_t = Eigen::Vector<unsigned, Eigen::Dynamic>;
+using block_t = Eigen::Block<mat_u_t>;
 
 namespace stab {
     class AffineState {
@@ -55,11 +57,11 @@ namespace stab {
 
         int phase() const;
 
-        Eigen::MatrixXi Q() const;
+        mat_u_t Q() const;
 
-        Eigen::MatrixXi A() const;
+        mat_u_t A() const;
 
-        Eigen::VectorXi b() const;
+        vec_u_t b() const;
 
         std::unordered_map<int, int> pivots() const;
 
@@ -73,11 +75,12 @@ namespace stab {
         // has rank r_ <= n_.
         int n_;     // number of qubits
         int phase_; // global phase_ is exp(i*pi*phase_/4)
-        Eigen::MatrixXi Qmaster_;
-        Eigen::MatrixXi Amaster_;
+
+        mat_u_t Qmaster_;
+        mat_u_t Amaster_;
         std::unique_ptr<block_t> Q_; // Points to active block of Qmaster_ (top-left corner)
         std::unique_ptr<block_t> A_; // Points to active block of A_ (leftmost columns)
-        Eigen::VectorXi b_;
+        vec_u_t b_;
         std::unordered_map<int, int>
                 pivots_; // AKA "principal index map." Keys are columns, values are the
         // rows that contain pivots_ in those columns. Note that we are
@@ -120,26 +123,30 @@ namespace stab {
 
     // Small helper functions
 
-    template <typename Derived>
-    [[nodiscard]] expr_t<Derived> ReduceMod2(const Eigen::MatrixBase<Derived>& A) {
-        // define the mod_p as a lambda taking an int (modulo) and returning a
-        // unary lambda that computes x -> x mod p \in {0,...,p-1};
-        auto mod_2 = []() {
-            // returns a unary lambda
-            return [](int x) { return x % 2; };
-        };
-        return A.unaryExpr(mod_2());
+    // defines the mod_p as a lambda taking an int (modulo) and returning a
+    // unary lambda that computes x -> x mod p \in {0,...,p-1};
+
+    auto mod_2 = []() {
+        // returns a unary lambda
+        return [](unsigned x) { return x & 1; };
+    };
+
+    auto mod_4 = []() {
+        // returns a unary lambda
+        return [](unsigned x) { return x & 2; };
+    };
+
+    auto inline m2 = mod_2();
+    auto inline m4 = mod_4();
+
+    template<typename Derived>
+    [[nodiscard]] expr_t<Derived> ReduceMod2(const Eigen::MatrixBase<Derived> &A) {
+        return A.unaryExpr(m2);
     }
 
-    template <typename Derived>
-    [[nodiscard]] expr_t<Derived> ReduceMod4(const Eigen::MatrixBase<Derived>& A) {
-        // define the mod_p as a lambda taking an int (modulo) and returning a
-        // unary lambda that computes x -> x mod p \in {0,...,p-1};
-        auto mod_4 = []() {
-            // returns a unary lambda
-            return [](int x) { return x % 4; };
-        };
-        return A.unaryExpr(mod_4());
+    template<typename Derived>
+    [[nodiscard]] expr_t<Derived> ReduceMod4(const Eigen::MatrixBase<Derived> &A) {
+        return A.unaryExpr(m4);
     }
 
 } // namespace stab

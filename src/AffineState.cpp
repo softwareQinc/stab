@@ -39,11 +39,11 @@ namespace stab {
 
     int AffineState::phase() const { return phase_; }
 
-    Eigen::MatrixXi AffineState::Q() const { return *Q_; }
+    mat_u_t AffineState::Q() const { return *Q_; }
 
-    Eigen::MatrixXi AffineState::A() const { return *A_; }
+    mat_u_t AffineState::A() const { return *A_; }
 
-    Eigen::VectorXi AffineState::b() const { return b_; }
+    vec_u_t AffineState::b() const { return b_; }
 
     std::unordered_map<int, int> AffineState::pivots() const { return pivots_; }
 
@@ -110,8 +110,8 @@ namespace stab {
         assert(r_ != 0);
 
         // Step 1:
-        Eigen::VectorXi a = A_->col(r_ - 1); // r_ - 1 because of 0-indexing
-        Eigen::VectorXi q;
+        vec_u_t a = A_->col(r_ - 1); // r_ - 1 because of 0-indexing
+        vec_u_t q;
         if (r_ > 1) { // If r == 1 then the line below throws an error due to r_ - 2
             q = (*Q_)(Eigen::seq(0, r_ - 2), r_ - 1);
         }
@@ -144,12 +144,12 @@ namespace stab {
         ReindexSwapColumns(c, r_); // Use r_ instead of r_+1 here because of 0-indexing
 
         // Step 2:
-        Eigen::VectorXi q = (*Q_)(Eigen::seq(0, r_ - 1), r_); // Step 2.
+        vec_u_t q = (*Q_)(Eigen::seq(0, r_ - 1), r_); // Step 2.
         int u = (*Q_)(r_, r_) % 4;
 
         // Step 3:
         // No need to set A_->col(r_) to zero since it's already zero
-        A_ = std::make_unique<block_t>(Amaster_, 0, 0, n_, r_ );
+        A_ = std::make_unique<block_t>(Amaster_, 0, 0, n_, r_);
         Q_->row(r_).setZero();
         Q_->col(r_).setZero();
         Q_ = std::make_unique<block_t>(Qmaster_, 0, 0, r_, r_);
@@ -206,9 +206,9 @@ namespace stab {
         }
 
         // Step 3:
-        Eigen::VectorXi atilde = Eigen::VectorXi::Zero(r_ + 1);
+        vec_u_t atilde = vec_u_t::Zero(r_ + 1);
         atilde(Eigen::seq(0, r_ - 1)) = A_->row(j).transpose();
-        Eigen::VectorXi atildetrans = atilde.transpose();
+        vec_u_t atildetrans = atilde.transpose();
 
         // Step 4:
         A_->row(j).setZero();
@@ -397,12 +397,12 @@ namespace stab {
     }
 
     std::vector<int> AffineState::MeasureAll() const {
-        Eigen::VectorXi x(r_);
+        vec_u_t x(r_);
         // x.setZero(r_); // no need, since we sized it first
         std::for_each(x.data(), x.data() + x.size(), [](auto &elem) {
             elem = random_bit();
         });
-        Eigen::VectorXi tmp = ReduceMod2((*A_) * x + b_);
+        vec_u_t tmp = ReduceMod2((*A_) * x + b_);
         return {tmp.data(), tmp.data() + tmp.size()};
     }
 
@@ -424,7 +424,7 @@ namespace stab {
 
     void AffineState::ReduceQ() {
         // Reduces Q mod 4 on the diagonal and mod 2 elsewhere
-        Eigen::VectorXi qdiag = ReduceMod4(Q_->diagonal());
+        vec_u_t qdiag = ReduceMod4(Q_->diagonal());
         (*Q_) = ReduceMod2((*Q_));
         Q_->diagonal() = qdiag;
     }
@@ -444,7 +444,7 @@ namespace stab {
         for (int k = 0; k < pow(2, ncols); ++k) {
             // For each x \in \{0,1\}^ncols, we now add the corresponding term to vec
             // First, let x = vector whose entries are the binary digits of k:
-            Eigen::VectorXi x;
+            vec_u_t x;
             x.setZero(ncols);
             std::bitset<16> bs(k);             // Get binary string
             for (int j = 0; j < ncols; ++j) { // Cast binary string to x
@@ -452,7 +452,7 @@ namespace stab {
             }
 
             // Figure out which basis state x results in:
-            Eigen::VectorXi ket = (*A_) * x + b_;
+            vec_u_t ket = (*A_) * x + b_;
             ket = ReduceMod2(ket);
             // "ket" is the binary representation of some number basis_state_number. We need to add the correct amplitude into vec[basis_state_number]. Note that AffineState puts the zero-th qubit on the left, but most people put it on the right, so we also make this conversion.
 
@@ -488,7 +488,7 @@ namespace stab {
         //if (psi.r_ > 12) {
         //    std::cout << "Too many amplitudes to print\n";
         //} else {
-        //    Eigen::VectorXi x;
+        //    vec_u_t x;
         //    x.setZero(psi.r_);
         //    for (int i = 0; i < pow(2, psi.r_); ++i) {
         //        std::bitset<16> bs(i);         // Get binary string
@@ -496,7 +496,7 @@ namespace stab {
         //            x(j) = int(bs[j]);
         //        }
 
-        //        Eigen::VectorXi ket = (*psi.A_) * x + psi.b_;
+        //        vec_u_t ket = (*psi.A_) * x + psi.b_;
         //        ket = ReduceMod(ket, 2);
         //        std::string rel_phase;
         //        int ampl = (2 * (x.transpose() * (*psi.Q_) * x)[0] + psi.phase_) % 8;
