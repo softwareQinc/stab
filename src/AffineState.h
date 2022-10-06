@@ -133,7 +133,7 @@ namespace stab {
 
     auto mod_4 = []() {
         // returns a unary lambda
-        return [](unsigned x) { return x & 2; };
+        return [](unsigned x) { return x & 3; };
     };
 
     auto inline m2 = mod_2();

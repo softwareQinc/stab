@@ -60,10 +60,7 @@ namespace stab {
     void AffineState::ReindexSubtColumn(int k, int c) {
         // Applies the update Column k of A <--- Column k - Column c
         assert(c != k);
-
-        A_->col(k) += A_->col(c);
-        A_->col(k) = ReduceMod2(A_->col(k));
-
+        A_->col(k) = ReduceMod2(A_->col(k) + A_->col(c));
         Q_->col(k) += Q_->col(c);
         Q_->row(k) += Q_->row(c);
         ReduceGramRowCol(k);
@@ -81,7 +78,7 @@ namespace stab {
     void AffineState::MakePrincipal(int c, int j) {
         assert((*A_)(j, c) != 0);
         for (int k = 0; k < r_; ++k) {
-            if (k != c && (*A_)(j, k) != 0) {
+            if ((*A_)(j, k) != 0 && k != c) {
                 ReindexSubtColumn(k, c);
             }
         }
