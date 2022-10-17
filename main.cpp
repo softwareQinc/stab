@@ -66,7 +66,25 @@ stab::AffineState run_stim(std::fstream& infile, const int& nq) {
 int main() {
     using namespace stab;
 
-    std::cout << "Beginning tests \n";
+    int n = 400;
+
+    AffineState psi(n);
+
+    for (int i = 0; i < n; ++i) {
+        psi.H(i);
+    }
+    for (int i = 0; i < n - 1; ++i) {
+        psi.CX(i, i + 1);
+    }
+    for (int i = 0; i < n; ++i) {
+        psi.S(i);
+    }
+    for (int i = 0; i < n - 1; ++i) {
+        psi.CZ(i, i + 1);
+    }
+
+
+    /*std::cout << "Beginning tests \n";
 
     std::vector<std::pair<int, double>> times;
     int nmin = 200;
@@ -97,5 +115,5 @@ int main() {
     for (auto p : times) {
         myfile << p.first << "," << p.second << "\n";
     }
-    myfile.close();
+    myfile.close();*/
 }
