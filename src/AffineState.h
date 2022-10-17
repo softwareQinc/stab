@@ -9,9 +9,10 @@
 
 #include <qpp/qpp.h>
 
-using mat_u_t = Eigen::Matrix<unsigned, Eigen::Dynamic, Eigen::Dynamic>;
-using vec_u_t = Eigen::Vector<unsigned, Eigen::Dynamic>;
-using block_t = Eigen::Block<mat_u_t>;
+using mat_b_t = Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic>;
+using vec_b_t = Eigen::Vector<bool, Eigen::Dynamic>;
+using block_t = Eigen::Block<mat_b_t>;
+using subvec_t = Eigen::VectorBlock<vec_b_t>;
 
 namespace stab {
     class AffineState {
@@ -41,8 +42,8 @@ namespace stab {
         void Z(int j);
 
         // Nonunitary operations
-        int MeasureZ(int j, bool postselect = false,
-                     int postselected_outcome = 0);
+        bool MeasureZ(int j, bool postselect = false,
+                     bool postselected_outcome = false);
 
         void Reset(int j); // Resets qubit j to |0>
 
@@ -57,11 +58,11 @@ namespace stab {
 
         int phase() const;
 
-        mat_u_t Q() const;
+        mat_b_t Q() const;
 
-        mat_u_t A() const;
+        mat_b_t A() const;
 
-        vec_u_t b() const;
+        vec_b_t b() const;
 
         std::unordered_map<int, int> pivots() const;
 
@@ -76,25 +77,27 @@ namespace stab {
         int n_;     // number of qubits
         int phase_; // global phase_ is exp(i*pi*phase_/4)
 
-        mat_u_t Qmaster_;
-        mat_u_t Amaster_;
+        mat_b_t Qmaster_;
+        mat_b_t Amaster_;
+        vec_b_t Qonesmaster_;
+        vec_b_t Qtwosmaster_;
         std::unique_ptr<block_t> Q_; // Points to active block of Qmaster_ (top-left corner)
         std::unique_ptr<block_t> A_; // Points to active block of A_ (leftmost columns)
-        vec_u_t b_;
+        std::unique_ptr<subvec_t> Qones_; // ...
+        std::unique_ptr<subvec_t> Qtwos_; // ...
+        vec_b_t b_;
         std::unordered_map<int, int>
                 pivots_; // AKA "principal index map." Keys are columns, values are the
         // rows that contain pivots_ in those columns. Note that we are
         // using zero-indexing, so the smallest key (assuming the map
         // is nonempty) will always be 0, and the corresponding value
         // is the index of the row that has a pivot in column 0.
-        // TODO: pivots can probably be changed to an std::unordered_map
-        int r_; // Technically unnecessary since this is usually the rank of A_, but it is
-        // handy to not have to declare it each time
+        int r_;
 
         // Subroutines
-        void FixFinalBit(int z);
+        void DiagAdd(int index, int addend);
 
-        void ReduceGramRowCol(int c);
+        void FixFinalBit(int z);
 
         void ReindexSubtColumn(int k, int c);
 
@@ -105,9 +108,6 @@ namespace stab {
         bool ReselectPrincipalRow(int j, int c);
 
         void ZeroColumnElim(int c);
-
-        void
-        ReduceQ(); // Reduces mod 4 on the diagonal and mod 2 on the off-diagonal
 
         void S_or_SDG(int j, bool dg);
 
@@ -121,32 +121,8 @@ namespace stab {
     using expr_t =
             typename std::decay<decltype(std::declval<Derived>().eval())>::type;
 
-    // Small helper functions
-
-    // defines the mod_p as a lambda taking an int (modulo) and returning a
-    // unary lambda that computes x -> x mod p \in {0,...,p-1};
-
-    auto mod_2 = []() {
-        // returns a unary lambda
-        return [](unsigned x) { return x & 1; };
-    };
-
-    auto mod_4 = []() {
-        // returns a unary lambda
-        return [](unsigned x) { return x & 3; };
-    };
-
-    auto inline m2 = mod_2();
-    auto inline m4 = mod_4();
-
-    template<typename Derived>
-    [[nodiscard]] expr_t<Derived> ReduceMod2(const Eigen::MatrixBase<Derived> &A) {
-        return A.unaryExpr(m2);
-    }
-
-    template<typename Derived>
-    [[nodiscard]] expr_t<Derived> ReduceMod4(const Eigen::MatrixBase<Derived> &A) {
-        return A.unaryExpr(m4);
-    }
+    // Small helper function
+    // Eigen uses "+" as the "OR" operator, but we need XOR, so we will use this instead
+    auto bool_xor = [](bool x, bool y) { return x != y; };
 
 } // namespace stab
