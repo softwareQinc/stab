@@ -77,7 +77,7 @@ int main() {
     for (int n = nmin; n <= nmax; n += step) {
         std::cout << "Working on n = " << n << "\n";
         for (int j = 1; j <= copies_per_n; ++j) {
-            std::string fname = "PATH/TO/STIM/FILES";
+            std::string fname = "path to the folder random_shallow_nonuniform_stims";
             fname += "random_clifford_" + std::to_string(n) + "_" +
                      std::to_string(j) + ".stim";
             std::fstream infile(fname);
