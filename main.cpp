@@ -9,7 +9,6 @@
 #include <Eigen/Dense>
 #include <qpp/qpp.h>
 
-// include own library **always** last
 #include "AffineState.h"
 #include "random.h"
 #include "qasm/qasm.hpp"
@@ -66,25 +65,7 @@ stab::AffineState run_stim(std::fstream& infile, const int& nq) {
 int main() {
     using namespace stab;
 
-    int n = 400;
-
-    AffineState psi(n);
-
-    for (int i = 0; i < n; ++i) {
-        psi.H(i);
-    }
-    for (int i = 0; i < n - 1; ++i) {
-        psi.CX(i, i + 1);
-    }
-    for (int i = 0; i < n; ++i) {
-        psi.S(i);
-    }
-    for (int i = 0; i < n - 1; ++i) {
-        psi.CZ(i, i + 1);
-    }
-
-
-    /*std::cout << "Beginning tests \n";
+    std::cout << "Beginning tests \n";
 
     std::vector<std::pair<int, double>> times;
     int nmin = 200;
@@ -94,9 +75,9 @@ int main() {
 
 
     for (int n = nmin; n <= nmax; n += step) {
-        std::cout << n << "\n";
+        std::cout << "Working on n = " << n << "\n";
         for (int j = 1; j <= copies_per_n; ++j) {
-            std::string fname = R"(C:\Users\Alex\Desktop\random_shallow_nonuniform_stims\)";
+            std::string fname = "PATH/TO/STIM/FILES";
             fname += "random_clifford_" + std::to_string(n) + "_" +
                      std::to_string(j) + ".stim";
             std::fstream infile(fname);
@@ -107,7 +88,7 @@ int main() {
             std::chrono::duration<double> diff = end - start;
 
             times.push_back(std::make_pair(n, diff.count()));
-            std::cout << diff.count() << "\n";
+            std::cout << "Seconds elapsed: " << diff.count() << "\n";
         }
     }
 
@@ -115,5 +96,5 @@ int main() {
     for (auto p : times) {
         myfile << p.first << "," << p.second << "\n";
     }
-    myfile.close();*/
+    myfile.close();
 }
