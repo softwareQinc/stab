@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -13,7 +14,7 @@
 #include "random.h"
 #include "qasm/qasm.hpp"
 
-stab::AffineState run_stim(std::fstream& infile, const int& nq) {
+stab::AffineState run_stim(std::fstream &infile, const int &nq) {
     stab::AffineState psi(nq);
     std::string line;
     while (std::getline(infile, line)) {
@@ -62,7 +63,7 @@ stab::AffineState run_stim(std::fstream& infile, const int& nq) {
     return psi;
 }
 
-int main() {
+int main(int argc, char **argv) {
     using namespace stab;
 
     std::cout << "Beginning tests \n";
@@ -73,11 +74,16 @@ int main() {
     int step = 25;
     int copies_per_n = 3;
 
+    if (argc < 2) {
+        std::cerr << "Usage: " << argv[0] << " <path_to_bechmarking_directory>\n";
+        return EXIT_FAILURE;
+    }
+    std::string path{argv[1]};
 
     for (int n = nmin; n <= nmax; n += step) {
         std::cout << "Working on n = " << n << "\n";
         for (int j = 1; j <= copies_per_n; ++j) {
-            std::string fname = "path to the folder random_shallow_nonuniform_stims";
+            std::string fname{path};
             fname += "random_clifford_" + std::to_string(n) + "_" +
                      std::to_string(j) + ".stim";
             std::fstream infile(fname);
@@ -93,7 +99,7 @@ int main() {
     }
 
     std::fstream myfile("eigen_bool.csv", std::fstream::out);
-    for (auto p : times) {
+    for (auto p: times) {
         myfile << p.first << "," << p.second << "\n";
     }
     myfile.close();
