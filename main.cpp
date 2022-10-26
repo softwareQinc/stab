@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
     int copies_per_n = 3;
 
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <path_to_bechmarking_directory>\n";
+        std::cerr << "Usage: " << argv[0] << " <path to the folder random_shallow_nonuniform_stims>\n";
         return EXIT_FAILURE;
     }
     std::string path{argv[1]};
