@@ -92,11 +92,17 @@ namespace stab {
         // handy to not have to declare it each time
 
         // Subroutines
+        std::vector<int> A_col_nonzeros(int row);
+
+        std::vector<int> A_row_nonzeros(int col);
+
+        std::vector<int> Q_nonzeros(int col);
+
         void FixFinalBit(int z);
 
         void ReduceGramRowCol(int c);
 
-        void ReindexSubtColumn(int k, int c);
+        void ReindexSubtColumn(int k, int c, std::vector<int> col_c_nonzeros);
 
         void ReindexSwapColumns(int k, int c);
 

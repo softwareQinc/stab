@@ -66,28 +66,11 @@ stab::AffineState run_stim(std::fstream& infile, const int& nq) {
 int main() {
     using namespace stab;
 
-    AffineState psi(50);
-    for (int i = 0; i < 50; ++i) {
-        psi.H(i);
-    }
-    for (int i = 0; i < 50; ++i) {
-        psi.S(i);
-    }
-    for (int i = 0; i < 49; ++i) {
-        psi.CX(i, i + 1);
-    }
-    for (int i = 0; i < 49; ++i) {
-        psi.CZ(i, i + 1);
-    }
-    for (int i = 0; i < 50; ++i) {
-        psi.H(i);
-    }
-
-    /*std::cout << "Beginning tests \n";
+    std::cout << "Beginning tests \n";
 
     std::vector<std::pair<int, double>> times;
-    int nmin = 200;
-    int nmax = 400;
+    int nmin = 425;
+    int nmax = 1000;
     int step = 25;
     int copies_per_n = 3;
 
@@ -110,9 +93,9 @@ int main() {
         }
     }
 
-    std::fstream myfile("after_reducemod_changes.csv", std::fstream::out);
+    std::fstream myfile("nov_3_basic.csv", std::fstream::out);
     for (auto p : times) {
         myfile << p.first << "," << p.second << "\n";
     }
-    myfile.close();*/
+    myfile.close();
 }

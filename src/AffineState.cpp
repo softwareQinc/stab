@@ -50,6 +50,36 @@ namespace stab {
     int AffineState::r() const { return r_; }
 
 // Subroutines:
+    std::vector<int> AffineState::A_col_nonzeros(int col) {
+        // Returns location of ones in column "col" of A
+        std::vector<int> ones;
+        for (int row = 0; row < n_; ++row) {
+            if ((*A_)(row, col) == 1)
+                ones.push_back(row);
+        }
+        return ones;
+    }
+
+    std::vector<int> AffineState::Q_nonzeros(int col) {
+        // Returns location of nonzeros in column "col" of Q
+        // NOTE: If Q has r + 1 rows, then this ignores the last row
+        std::vector<int> ones;
+        for (int row = 0; row < r_; ++row) {
+            if ((*Q_)(row, col) != 0)
+                ones.push_back(row);
+        }
+        return ones;
+    }
+
+    std::vector<int> AffineState::A_row_nonzeros(int row) {
+        std::vector<int> ones;
+        for (int col = 0; col < r_; ++col) {
+            if ((*A_)(row, col) != 0)
+                ones.push_back(col);
+        }
+        return ones;
+    }
+
     void AffineState::ReduceGramRowCol(int c) {
         int new_qcc = (*Q_)(c, c) % 4; // Need to store since gets reduced mod 2 below
         Q_->row(c) = ReduceMod2(Q_->row(c));
@@ -57,10 +87,13 @@ namespace stab {
         (*Q_)(c, c) = new_qcc;
     }
 
-    void AffineState::ReindexSubtColumn(int k, int c) {
+    void AffineState::ReindexSubtColumn(int k, int c, std::vector<int> col_c_nonzeros) {
         // Applies the update Column k of A <--- Column k - Column c
         assert(c != k);
-        A_->col(k) = ReduceMod2(A_->col(k) + A_->col(c));
+
+        for (int row : col_c_nonzeros) (*A_)(row, k) ^= 1;
+
+        // TODO: Optimize Q part
         Q_->col(k) += Q_->col(c);
         Q_->row(k) += Q_->row(c);
         ReduceGramRowCol(k);
@@ -77,55 +110,50 @@ namespace stab {
 
     void AffineState::MakePrincipal(int c, int j) {
         assert((*A_)(j, c) != 0);
+        std::vector<int> col_c_nonzeros = A_col_nonzeros(c);
         for (int k = 0; k < r_; ++k) {
             if ((*A_)(j, k) != 0 && k != c) {
-                ReindexSubtColumn(k, c);
+                ReindexSubtColumn(k, c, col_c_nonzeros);
             }
         }
         pivots_[c] = j;
     }
 
     bool AffineState::ReselectPrincipalRow(int j, int c) {
-        int j_star = -1; // Equivalent to j_star = 0 in the paper (but we need to
-        // use -1 because of 0-indexing)
-        for (int jj = 0; jj < n_; ++jj) {
-            if ((*A_)(jj, c) != 0 && jj != j) {
-                j_star = jj;
-                break;
+        for (int j_star = 0; j_star < n_; ++j_star) {
+            if ((*A_)(j_star, c) != 0 && j_star != j) {
+                MakePrincipal(c, j_star);
+                return true;
             }
         }
-
-        if (j_star != -1) {
-            MakePrincipal(c, j_star);
-            return true;
-        } else {
-            return false;
-        }
+        return false;
     }
 
     void AffineState::FixFinalBit(int z) {
         assert(r_ != 0);
 
         // Step 1:
-        vec_u_t a = A_->col(r_ - 1); // r_ - 1 because of 0-indexing
-        vec_u_t q;
-        if (r_ > 1) { // If r == 1 then the line below throws an error due to r_ - 2
-            q = (*Q_)(Eigen::seq(0, r_ - 2), r_ - 1);
-        }
+        std::vector<int> a_ones = A_col_nonzeros(r_ - 1);
+        std::vector<int> q_ones = Q_nonzeros(r_ - 1); // May contain "r_ - 1"
         int u = (*Q_)(r_ - 1, r_ - 1) % 4;
 
         // Step 2:
-        A_->col(r_ - 1).setZero(); // Set to zero before removing since this col will persist in Amaster_
-        Q_->col(r_ - 1).setZero(); // Ditto
-        Q_->row(r_ - 1).setZero(); // Ditto
+        for (int row : a_ones) {
+            (*A_)(row, r_ - 1) = 0; 
+        }
+        for (int rowcol : q_ones) {
+            (*Q_)(rowcol, r_ - 1) = 0;
+            (*Q_)(r_ - 1, rowcol) = 0;
+        }
         A_ = std::make_unique<block_t>(Amaster_, 0, 0, n_, r_ - 1);
         Q_ = std::make_unique<block_t>(Qmaster_, 0, 0, r_ - 1, r_ - 1);
 
         // Step 3:
-        if (z == 1) { // ReduceMod is relatively expensive, so it makes sense to check whether z == 1
-            Q_->diagonal() += 2 * q;
-            Q_->diagonal() = ReduceMod4(Q_->diagonal());
-            b_ = ReduceMod2(b_ + a);
+        if (z == 1) {
+            for (int i : q_ones) {
+                if (i != r_ - 1) (*Q_)(i, i) = ((*Q_)(i, i) + 2) % 4;
+            }
+            for (int row : a_ones) b_(row) ^= 1;
             phase_ = (phase_ + 2 * u) % 8;
         }
 
@@ -141,14 +169,17 @@ namespace stab {
         ReindexSwapColumns(c, r_); // Use r_ instead of r_+1 here because of 0-indexing
 
         // Step 2:
-        vec_u_t q = (*Q_)(Eigen::seq(0, r_ - 1), r_); // Step 2.
+        std::vector<int> q_ones = Q_nonzeros(r_);
         int u = (*Q_)(r_, r_) % 4;
 
         // Step 3:
         // No need to set A_->col(r_) to zero since it's already zero
         A_ = std::make_unique<block_t>(Amaster_, 0, 0, n_, r_);
-        Q_->row(r_).setZero();
-        Q_->col(r_).setZero();
+        for (int rowcol : q_ones) {
+            (*Q_)(rowcol, r_) = 0;
+            (*Q_)(r_, rowcol) = 0;
+        }
+        (*Q_)(r_, r_) = 0;
         Q_ = std::make_unique<block_t>(Qmaster_, 0, 0, r_, r_);
 
         // Step 3.5:
@@ -156,25 +187,28 @@ namespace stab {
 
         // Step 4
         if (u % 2 == 1) {
-            (*Q_) += (u + 2) * q * q.transpose();
-            ReduceQ();
+            for (int row : q_ones) {
+                for (int col : q_ones) {
+                    if (row == col) {
+                        (*Q_)(row, col) = ((*Q_)(row, col) + 2 + u) % 4;
+                    } else {
+                        (*Q_)(row, col) ^= 1;
+                    }
+                }
+            }
             phase_ = (phase_ - u + 2) % 8;
             return;
+
         } else { // u is even
-            assert(!q.isZero());
-            // TODO: Check whether q == \vec{0}? For now assume not
-            int ell;
-            for (int i = 0; i < r_; ++i) {
-                if (q(i) != 0) {
-                    ell = i;
-                    break;
-                }
+            assert(q_ones.size() != 0);
+
+            int ell = q_ones[0];
+            std::vector<int> col_ell_nonzeros = A_col_nonzeros(ell);
+
+            for (int col : q_ones) {
+                if (col != ell) ReindexSubtColumn(col, ell, col_ell_nonzeros);
             }
-            for (int k = 0; k < r_; ++k) {
-                if (q(k) != 0 && k != ell) {
-                    ReindexSubtColumn(k, ell);
-                }
-            }
+
             ReindexSwapColumns(r_ - 1, ell); // r_-1 because of 0-indexing. This step also produces A^(3) and Q^(3)
             // At this point, A_ and Q_ should have r_ columns each. Also, since we removed the zero column in Step 3, the rank of A_ should be r_
             FixFinalBit(u / 2);
@@ -203,12 +237,13 @@ namespace stab {
         }
 
         // Step 3:
-        vec_u_t atilde = vec_u_t::Zero(r_ + 1);
-        atilde(Eigen::seq(0, r_ - 1)) = A_->row(j).transpose();
-        vec_u_t atildetrans = atilde.transpose();
+        std::vector<int> atilde_ones = A_row_nonzeros(j);//
 
         // Step 4:
-        A_->row(j).setZero();
+        for (int col : atilde_ones) {
+            (*A_)(j, col) = 0;
+        }
+        assert(A_->row(j).isZero());  //
         A_ = std::make_unique<block_t>(Amaster_, 0, 0, n_, r_ + 1);
         // Note that the new column of A_ is already zero
         (*A_)(j, r_) = 1;
@@ -216,8 +251,10 @@ namespace stab {
 
         // Step 5:
         Q_ = std::make_unique<block_t>(Qmaster_, 0, 0, r_ + 1, r_ + 1);
-        Q_->row(r_) = atildetrans;
-        Q_->col(r_) = atildetrans;
+        for (int rowcol : atilde_ones) {
+            (*Q_)(rowcol, r_) = 1;
+            (*Q_)(r_, rowcol) = 1;
+        }
         (*Q_)(r_, r_) = 2 * b_(j);
 
         // Step 6:
@@ -235,36 +272,25 @@ namespace stab {
         if (r_ > 0) { // If psi is a computational basis state then A_ has
             // zero columns, so this block would do nothing anyway
 
-            int pcj = piv_col(j);
-            int pck = piv_col(k);
+            std::vector<int> Aj_ones = A_row_nonzeros(j);
+            std::vector<int> Ak_ones = A_row_nonzeros(k);
 
-            if (pcj != -1 && pck != -1) { // Nice case since it takes time O(1)
-                (*Q_)(pcj, pck) ^= 1;
-                (*Q_)(pck, pcj) = (*Q_)(pcj, pck);
-                (*Q_)(pcj, pcj) = ((*Q_)(pcj, pcj) + 2 * b_(k)) % 4;
-                (*Q_)(pck, pck) = ((*Q_)(pck, pck) + 2 * b_(j)) % 4;
-            } else if (pcj != -1 && pck == -1) { // O(r_) time
-                Q_->col(pcj) += A_->row(k).transpose();
-                Q_->row(pcj) += A_->row(k);
-                (*Q_)(pcj, pcj) += 2 * b_(k);
-                Q_->diagonal() += 2 * b_(j) * A_->row(k);
+            for (int jj : Aj_ones) {
+                for (int kk : Ak_ones) {
+                    if (jj == kk) {
+                        (*Q_)(jj, kk) = ((*Q_)(jj, kk) + 2) % 4;
+                    } else {
+                        (*Q_)(jj, kk) ^= 1;
+                        (*Q_)(kk, jj) ^= 1;
+                    }
+                }
+            }
 
-                ReduceGramRowCol(pcj);
-                Q_->diagonal() = ReduceMod4(Q_->diagonal());
-            } else if (pcj == -1 && pck != -1) { // Same as previous case but j and k swapped
-                Q_->col(pck) += A_->row(j).transpose();
-                Q_->row(pck) += A_->row(j);
-                (*Q_)(pck, pck) += 2 * b_(j);
-                Q_->diagonal() += 2 * b_(k) * A_->row(j);
-
-                ReduceGramRowCol(pck);
-                Q_->diagonal() = ReduceMod4(Q_->diagonal());
-            } else { // Slow case since it takes time O(r_^2)
-                (*Q_) += A_->row(j).transpose() * A_->row(k) +
-                         A_->row(k).transpose() * A_->row(j);
-                Q_->diagonal() += 2 * b_(k) * A_->row(j);
-                Q_->diagonal() += 2 * b_(j) * A_->row(k);
-                ReduceQ(); // No guarantees about which coordinates will be modified, so no choice but to reduce everything
+            for (int jj : Aj_ones) {
+                (*Q_)(jj, jj) = ((*Q_)(jj, jj) + 2 * b_(k)) % 4;
+            }
+            for (int kk : Ak_ones) {
+                (*Q_)(kk, kk) = ((*Q_)(kk, kk) + 2 * b_(j)) % 4;
             }
         }
         phase_ = (phase_ + 4 * b_(j) * b_(k)) % 8;
@@ -272,25 +298,16 @@ namespace stab {
 
     void AffineState::CX(int h, int j) {
         // Step 1:
-        int c = -1;
-        for (int cc = 0; cc < r_; ++cc) {
-            if (pivots_[cc] == j) {
-                c = cc;
-                break;
-            }
-        }
+        int c = piv_col(j);
 
         // Step 2:
-        A_->row(j) += A_->row(h);
-        A_->row(j) = ReduceMod2(A_->row(j));
+        for (int col : A_row_nonzeros(h)) (*A_)(j, col) ^= 1;
 
         // Step 3:
-        b_(j) = (b_(j) + b_(h)) % 2;
+        b_(j) ^= b_(h);
 
         // Step 4:
-        if (c != -1) {
-            ReselectPrincipalRow(-1, c);
-        }
+        if (c != -1) ReselectPrincipalRow(-1, c);
     }
 
     void AffineState::SWAP(int j, int k) {
@@ -317,31 +334,17 @@ namespace stab {
         // dg = true means we apply S^\dagger, dg = false means we apply S
         int sign = 1 - 2 * int(dg);  // = +1 for S and -1 for S^\dagger
 
-        if (r_ > 0) { // The lines below are irrelevant if r_ == 0
-            int pivcol = piv_col(j);
-            if (pivcol != -1) { // Special case that can be done in O(1) time.
-                (*Q_)(pivcol, pivcol) =
-                        ((*Q_)(pivcol, pivcol) + sign * (1 - 2 * b_(j)) + 4) % 4;
-            } else { // In general takes O(r_) time
-                std::vector<int> Aj_nonzeros;
-                for (int k = 0; k < r_; ++k) {
-                    if ((*A_)(j, k) == 1) {
-                        Aj_nonzeros.push_back(k);
-                    }
-                }
-
-                for (int row: Aj_nonzeros) {
-                    for (int col: Aj_nonzeros) {
-                        (*Q_)(row, col) += 4 + sign * (1 - 2 * b_(j));
-                        if (row == col) {
-                            (*Q_)(row, col) %= 4;
-                        } else {
-                            (*Q_)(row, col) %= 2;
-                        }
+            std::vector<int> Aj_ones = A_row_nonzeros(j);
+            for (int row : Aj_ones) {
+                for (int col : Aj_ones) {
+                    (*Q_)(row, col) += 4 + sign * (1 - 2 * b_(j));
+                    if (row == col) {
+                        (*Q_)(row, col) %= 4;
+                    } else {
+                        (*Q_)(row, col) %= 2;
                     }
                 }
             }
-        }
         phase_ = (phase_ + sign * 2 * b_(j) + 8) % 8;
     }
 
@@ -353,8 +356,10 @@ namespace stab {
 
     void AffineState::Z(int j) {
         phase_ = (phase_ + 4 * (b_(j))) % 8;
-        Q_->diagonal() += 2 * A_->row(j);
-        Q_->diagonal() = ReduceMod4(Q_->diagonal());
+        std::vector<int> Aj_ones = A_row_nonzeros(j);
+        for (int i : Aj_ones) {
+            (*Q_)(i, i) = ((*Q_)(i, i) + 2) % 4;
+        }
     }
 
     void AffineState::Y(int j) {
