@@ -87,9 +87,7 @@ namespace stab {
         // using zero-indexing, so the smallest key (assuming the map
         // is nonempty) will always be 0, and the corresponding value
         // is the index of the row that has a pivot in column 0.
-        // TODO: pivots can probably be changed to an std::unordered_map
-        int r_; // Technically unnecessary since this is usually the rank of A_, but it is
-        // handy to not have to declare it each time
+        int r_;
 
         // Subroutines
         std::vector<int> A_col_nonzeros(int row);

@@ -384,32 +384,31 @@ namespace stab {
             } else {
                 beta = random_bit();
             }
-            int k;
-            for (int i = 0; i < r_; i++) { // TODO: Optimize
-                if ((*A_)(j, i) != 0) {
-                    k = i;
+            for (int k = 0; k < r_; k++) {
+                if ((*A_)(j, k) != 0) {
+                    ReindexSwapColumns(k, r_ - 1);
                     break;
                 }
             }
-            ReindexSwapColumns(k, r_ - 1);
             MakePrincipal(r_ - 1, j);
-            FixFinalBit(beta);
+            FixFinalBit(beta^b_(j));
             return beta;
         }
     }
 
     std::vector<int> AffineState::MeasureAll() const {
         vec_u_t x(r_);
-        // x.setZero(r_); // no need, since we sized it first
-        std::for_each(x.data(), x.data() + x.size(), [](auto &elem) {
-            elem = random_bit();
-        });
+        for (int i = 0; i < r_; ++i) x(i) = random_bit();
+
         vec_u_t tmp = ReduceMod2((*A_) * x + b_);
-        return {tmp.data(), tmp.data() + tmp.size()};
+        std::vector<int> result(n_);
+        for (int i = 0; i < n_; ++i) result[i] = tmp(i);
+
+        return result;
     }
 
     std::map<std::vector<int>, int>
-    AffineState::Sample(int nreps) const { // TODO: Naive approach can be improved
+    AffineState::Sample(int nreps) const {
         std::map<std::vector<int>, int> results;
         for (int repnumber = 0; repnumber < nreps; ++repnumber) {
             ++results[MeasureAll()];
