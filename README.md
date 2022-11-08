@@ -1,2 +1,2 @@
 # stab
-Fast simulation of stabilizer circuits
+Efficient simulation of Clifford circuits using the method described in arXiv:2109.08629
