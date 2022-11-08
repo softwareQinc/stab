@@ -21,35 +21,20 @@ namespace stab {
 
         AffineState(const AffineState &other);
 
-        // Unitary gates
         void CZ(int a, int b);
-
         void CX(int a, int b);
-
         void SWAP(int a, int b);
-
         void S(int j);
-
         void SDG(int j);
-
         void H(int a);
-
         void X(int j);
-
         void Y(int j);
-
         void Z(int j);
-
-        // Nonunitary operations
         int MeasureZ(int j, bool postselect = false,
                      int postselected_outcome = 0);
-
-        void Reset(int j); // Resets qubit j to |0>
-
+        void Reset(int j);
         std::vector<int> MeasureAll() const;
-
         std::map<std::vector<int>, int> Sample(int nreps) const;
-
         Eigen::VectorXcd to_vec() const;
 
         // Get member variables:
@@ -73,13 +58,8 @@ namespace stab {
         // State is represented by exp(i*pi*phase_/8)/sqrt(2^r_) \sum_{x \in
         // \{0,1\}^r_} i^{x^T Q_ x} \ket{Ax + b_ mod 2}, where A_ is n_\times r_ and
         // has rank r_ <= n_.
-        int n_;     // number of qubits
-        int phase_; // global phase_ is exp(i*pi*phase_/4)
-
-        mat_u_t Qmaster_;
-        mat_u_t Amaster_;
-        std::unique_ptr<block_t> Q_; // Points to active block of Qmaster_ (top-left corner)
-        std::unique_ptr<block_t> A_; // Points to active block of A_ (leftmost columns)
+        int n_, phase_, r_;     // number of qubits
+        mat_u_t Q_, A_;
         vec_u_t b_;
         std::unordered_map<int, int>
                 pivots_; // AKA "principal index map." Keys are columns, values are the
@@ -87,7 +67,6 @@ namespace stab {
         // using zero-indexing, so the smallest key (assuming the map
         // is nonempty) will always be 0, and the corresponding value
         // is the index of the row that has a pivot in column 0.
-        int r_;
 
         // Subroutines
         std::vector<int> A_col_nonzeros(int row);
