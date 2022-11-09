@@ -89,15 +89,10 @@ namespace stab {
 
         void ZeroColumnElim(int c);
 
-        void
-        ReduceQ(); // Reduces mod 4 on the diagonal and mod 2 on the off-diagonal
-
         void S_or_SDG(int j, bool dg);
 
         int piv_col(int row_number);
 
-        void print() const; // Only used for printing state at intermediate stages
-        // of the calculation when diagnosing errors
     }; // class AffineState
 
     template<typename Derived>
@@ -105,31 +100,16 @@ namespace stab {
             typename std::decay<decltype(std::declval<Derived>().eval())>::type;
 
     // Small helper functions
-
-    // defines the mod_p as a lambda taking an int (modulo) and returning a
-    // unary lambda that computes x -> x mod p \in {0,...,p-1};
-
     auto mod_2 = []() {
         // returns a unary lambda
         return [](unsigned x) { return x & 1; };
     };
 
-    auto mod_4 = []() {
-        // returns a unary lambda
-        return [](unsigned x) { return x & 3; };
-    };
-
     auto inline m2 = mod_2();
-    auto inline m4 = mod_4();
 
     template<typename Derived>
     [[nodiscard]] expr_t<Derived> ReduceMod2(const Eigen::MatrixBase<Derived> &A) {
         return A.unaryExpr(m2);
-    }
-
-    template<typename Derived>
-    [[nodiscard]] expr_t<Derived> ReduceMod4(const Eigen::MatrixBase<Derived> &A) {
-        return A.unaryExpr(m4);
     }
 
 } // namespace stab

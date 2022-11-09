@@ -392,13 +392,6 @@ namespace stab {
         }
     }
 
-    void AffineState::ReduceQ() {
-        // Reduces Q mod 4 on the diagonal and mod 2 elsewhere
-        vec_u_t qdiag = ReduceMod4(Q_.diagonal());
-        Q_ = ReduceMod2(Q_);
-        Q_.diagonal() = qdiag;
-    }
-
     Eigen::VectorXcd AffineState::to_vec() const {
         if (n_ > 16) {
             throw std::logic_error("Maximum number of qubits for statevector "
