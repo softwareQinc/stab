@@ -9,40 +9,32 @@
 
 #include <qpp/qpp.h>
 
+using mat_u_t = Eigen::Matrix<unsigned, Eigen::Dynamic, Eigen::Dynamic>;
+using vec_u_t = Eigen::Vector<unsigned, Eigen::Dynamic>;
+using block_t = Eigen::Block<mat_u_t>;
+
 namespace stab {
     class AffineState {
     public:
 
         explicit AffineState(int n);
 
-        // Unitary gates
+        AffineState(const AffineState &other);
+
         void CZ(int a, int b);
-
         void CX(int a, int b);
-
         void SWAP(int a, int b);
-
         void S(int j);
-
         void SDG(int j);
-
         void H(int a);
-
         void X(int j);
-
         void Y(int j);
-
         void Z(int j);
-
-        // Nonunitary operations
         int MeasureZ(int j, bool postselect = false,
                      int postselected_outcome = 0);
-        void Reset(int j); // Resets qubit j to |0>
-
+        void Reset(int j);
         std::vector<int> MeasureAll() const;
-
         std::map<std::vector<int>, int> Sample(int nreps) const;
-
         Eigen::VectorXcd to_vec() const;
 
         // Get member variables:
@@ -50,13 +42,13 @@ namespace stab {
 
         int phase() const;
 
-        Eigen::MatrixXi Q() const;
+        mat_u_t Q() const;
 
-        Eigen::MatrixXi A() const;
+        mat_u_t A() const;
 
-        Eigen::VectorXi b() const;
+        vec_u_t b() const;
 
-        std::unordered_map<int, int> pivots() const;
+        std::vector<int> pivots() const;
 
         int r() const;
 
@@ -66,27 +58,23 @@ namespace stab {
         // State is represented by exp(i*pi*phase_/8)/sqrt(2^r_) \sum_{x \in
         // \{0,1\}^r_} i^{x^T Q_ x} \ket{Ax + b_ mod 2}, where A_ is n_\times r_ and
         // has rank r_ <= n_.
-        int n_;     // number of qubits
-        int phase_; // global phase_ is exp(i*pi*phase_/4)
-        Eigen::MatrixXi Q_;
-        Eigen::MatrixXi A_;
-        Eigen::VectorXi b_;
-        std::unordered_map<int, int>
-                pivots_; // AKA "principal index map." Keys are columns, values are the
-        // rows that contain pivots_ in those columns. Note that we are
-        // using zero-indexing, so the smallest key (assuming the map
-        // is nonempty) will always be 0, and the corresponding value
-        // is the index of the row that has a pivot in column 0.
-        // TODO: pivots can probably be changed to an std::unordered_map
-        int r_; // Technically unnecessary since this is usually A_.cols() or rank of A_, but it is
-        // handy to not have to declare it each time
+        int n_, phase_, r_;     // number of qubits
+        mat_u_t Q_, A_;
+        vec_u_t b_;
+        std::vector<int> pivots_; // pivots_[i] == the row of A_ that has a pivot in column i
 
         // Subroutines
+        std::vector<int> A_col_nonzeros(int row);
+
+        std::vector<int> A_row_nonzeros(int col);
+
+        std::vector<int> Q_nonzeros(int col);
+
         void FixFinalBit(int z);
 
         void ReduceGramRowCol(int c);
 
-        void ReindexSubtColumn(int k, int c);
+        void ReindexSubtColumn(int k, int c, std::vector<int> col_c_nonzeros);
 
         void ReindexSwapColumns(int k, int c);
 
@@ -96,15 +84,10 @@ namespace stab {
 
         void ZeroColumnElim(int c);
 
-        void
-        ReduceQ(); // Reduces mod 4 on the diagonal and mod 2 on the off-diagonal
-
         void S_or_SDG(int j, bool dg);
 
         int piv_col(int row_number);
 
-        void print() const; // Only used for printing state at intermediate stages
-        // of the calculation when diagnosing errors
     }; // class AffineState
 
     template<typename Derived>
@@ -112,17 +95,16 @@ namespace stab {
             typename std::decay<decltype(std::declval<Derived>().eval())>::type;
 
     // Small helper functions
+    auto mod_2 = []() {
+        // returns a unary lambda
+        return [](unsigned x) { return x & 1; };
+    };
+
+    auto inline m2 = mod_2();
+
     template<typename Derived>
-    [[nodiscard]] expr_t<Derived> ReduceMod(const Eigen::MatrixBase<Derived> &A, int modulus) {
-        // Reduces matrix modulo "modulus," and ensures entries are all nonnegative
-        assert(modulus > 0);
-        // define the mod_p as a lambda taking an int (modulo) and returning a
-        // unary lambda that computes x -> x mod p \in {0,...,p-1};
-        auto mod_p = [](int p) {
-            // returns a unary lambda
-            return [p](int x) { return ((x % p) + p) % p; };
-        };
-        return A.unaryExpr(mod_p(modulus));
+    [[nodiscard]] expr_t<Derived> ReduceMod2(const Eigen::MatrixBase<Derived> &A) {
+        return A.unaryExpr(m2);
     }
 
 } // namespace stab
