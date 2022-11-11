@@ -76,10 +76,6 @@ int main() {
     int step = 100;
     int copies_per_n = 1;
 
-    Q = std::make_unique<block_t>(m, 0, 0, 3, 3);
-    std::cout << Q->rows() << "x" << Q->cols() << "\n";
-    std::cout << *Q << "\n\n";
-
     for (int n = nmin; n <= nmax; n += step) {
         std::cout << n << "\n";
         for (int j = 1; j <= copies_per_n; ++j) {
