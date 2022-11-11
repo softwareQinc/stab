@@ -66,19 +66,19 @@ stab::AffineState run_stim(std::fstream& infile, const int& nq) {
 int main() {
     using namespace stab;
 
-    /*std::cout << "Beginning tests \n";
+    std::cout << "Beginning tests \n";
 
     std::vector<std::pair<int, double>> times;
-    int nmin = 200;
-    int nmax = 1000;
-    int step = 25;
-    int copies_per_n = 3;
+    int nmin = 100;
+    int nmax = 2000;
+    int step = 100;
+    int copies_per_n = 1;
 
 
     for (int n = nmin; n <= nmax; n += step) {
         std::cout << n << "\n";
         for (int j = 1; j <= copies_per_n; ++j) {
-            std::string fname = R"(C:\Users\Alex\Desktop\random_stims\)";
+            std::string fname = R"(C:\Users\Alex\Desktop\random_stims_to_2000\)";
             fname += "random_clifford_" + std::to_string(n) + "_" +
                      std::to_string(j) + ".stim";
             std::fstream infile(fname);
@@ -93,9 +93,9 @@ int main() {
         }
     }
 
-    std::fstream myfile("nov_7_uniform_stab.csv", std::fstream::out);
+    std::fstream myfile("random_stims_to_2000_improved.csv", std::fstream::out);
     for (auto p : times) {
         myfile << p.first << "," << p.second << "\n";
     }
-    myfile.close();*/
+    myfile.close();
 }

@@ -11,8 +11,10 @@
 #include "random.h"
 
 namespace stab {
-    // constructor (initialization):
+// constructor (initialization):
     AffineState::AffineState(int n) : n_{n}, phase_{0}, r_{0} {
+        pivots_ = std::vector<int>(); // TODO: Not sure how construction works here...
+        pivots_.reserve(n + 1);
         Q_.setZero(n + 1, n + 1);
         A_.setZero(n, n + 1); // We sometimes need an extra column for workspace
         b_.setZero(n);
@@ -39,7 +41,7 @@ namespace stab {
 
     vec_u_t AffineState::b() const { return b_; }
 
-    std::unordered_map<int, int> AffineState::pivots() const { return pivots_; }
+    std::vector<int> AffineState::pivots() const { return pivots_; }
 
     int AffineState::r() const { return r_; }
 
@@ -47,6 +49,7 @@ namespace stab {
     std::vector<int> AffineState::A_col_nonzeros(int col) {
         // Returns location of ones in column "col" of A
         std::vector<int> ones;
+        ones.reserve(n_); // TODO: Is reserve() worth it? Many times ones will be very short.
         for (int row = 0; row < n_; ++row) {
             if (A_(row, col) == 1)
                 ones.push_back(row);
@@ -58,6 +61,7 @@ namespace stab {
         // Returns location of nonzeros in column "col" of Q
         // NOTE: If Q has r + 1 rows, then this ignores the last row
         std::vector<int> ones;
+        ones.reserve(r_);
         for (int row = 0; row < r_; ++row) {
             if (Q_(row, col) != 0)
                 ones.push_back(row);
@@ -67,6 +71,7 @@ namespace stab {
 
     std::vector<int> AffineState::A_row_nonzeros(int row) {
         std::vector<int> ones;
+        ones.reserve(r_);
         for (int col = 0; col < r_; ++col) {
             if (A_(row, col) != 0)
                 ones.push_back(col);
@@ -98,7 +103,7 @@ namespace stab {
             A_.col(k).swap(A_.col(c));
             Q_.col(k).swap(Q_.col(c));
             Q_.row(k).swap(Q_.row(c));
-            std::swap(pivots_.at(k), pivots_.at(c));
+            std::swap(pivots_[k], pivots_[c]);
         }
     }
 
@@ -149,7 +154,7 @@ namespace stab {
         }
 
         // Step 4:
-        pivots_.erase(r_ - 1);
+        pivots_.pop_back();
         --r_;
     }
 
@@ -171,7 +176,7 @@ namespace stab {
         Q_(r_, r_) = 0;
 
         // Step 3.5:
-        pivots_.erase(r_); // <-- Both parts of the if statement in Step 4 require us to do this
+        pivots_.pop_back(); // <-- Both parts of the if statement in Step 4 require us to do this
 
         // Step 4
         if (u % 2 == 1) {
@@ -205,6 +210,7 @@ namespace stab {
 
     int AffineState::piv_col(int row_number) {
         // Given a row number, return the index of the column j for in which that row has a pivot, and return -1 otherwise
+        // TODO: Optimize
         for (int i = 0; i < r_; ++i) {
             if (pivots_[i] == row_number) {
                 return i;
@@ -233,7 +239,7 @@ namespace stab {
         }
         
         A_(j, r_) = 1;
-        pivots_[r_] = j;
+        pivots_.push_back(j);
 
         // Step 5:
         for (int rowcol : atilde_ones) {
@@ -438,8 +444,8 @@ namespace stab {
         }
         out << "b^T = " << psi.b_.transpose() << '\n';
         out << "pivots = ";
-        for (auto p: psi.pivots_) {
-            out << "(" << p.first << ", " << p.second << "), ";
+        for (int i = 0; i < psi.r_; ++i) {
+            out << "(" << i << ", " << psi.pivots_[i] << ") ";
         }
         return out;
     }

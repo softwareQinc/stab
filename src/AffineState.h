@@ -48,7 +48,7 @@ namespace stab {
 
         vec_u_t b() const;
 
-        std::unordered_map<int, int> pivots() const;
+        std::vector<int> pivots() const;
 
         int r() const;
 
@@ -61,12 +61,7 @@ namespace stab {
         int n_, phase_, r_;     // number of qubits
         mat_u_t Q_, A_;
         vec_u_t b_;
-        std::unordered_map<int, int>
-                pivots_; // AKA "principal index map." Keys are columns, values are the
-        // rows that contain pivots_ in those columns. Note that we are
-        // using zero-indexing, so the smallest key (assuming the map
-        // is nonempty) will always be 0, and the corresponding value
-        // is the index of the row that has a pivot in column 0.
+        std::vector<int> pivots_; // pivots_[i] == the row of A_ that has a pivot in column i
 
         // Subroutines
         std::vector<int> A_col_nonzeros(int row);
