@@ -49,7 +49,7 @@ namespace stab {
     std::vector<int> AffineState::A_col_nonzeros(int col) {
         // Returns location of ones in column "col" of A
         std::vector<int> ones;
-        ones.reserve(n_); // TODO: Is reserve() worth it? Many times ones will be very short.
+        ones.reserve(n_);
         for (int row = 0; row < n_; ++row) {
             if (A_(row, col) == 1)
                 ones.push_back(row);
@@ -57,13 +57,12 @@ namespace stab {
         return ones;
     }
 
-    std::vector<int> AffineState::Q_nonzeros(int col) {
-        // Returns location of nonzeros in column "col" of Q
-        // NOTE: If Q has r + 1 rows, then this ignores the last row
+    std::vector<int> AffineState::Q_nonzeros() {
+        // Returns location of nonzeros in last col of Q, ignoring the diagonal entry
         std::vector<int> ones;
-        ones.reserve(r_);
-        for (int row = 0; row < r_; ++row) {
-            if (Q_(row, col) != 0)
+        ones.reserve(r_ - 1);
+        for (int row = 0; row < r_ - 1; ++row) {
+            if (Q_(row, r_ - 1) != 0)
                 ones.push_back(row);
         }
         return ones;
@@ -98,12 +97,12 @@ namespace stab {
         ReduceGramRowCol(k);
     }
 
-    void AffineState::ReindexSwapColumns(int k, int c) {
-        if (c != k) {
-            A_.col(k).swap(A_.col(c));
-            Q_.col(k).swap(Q_.col(c));
-            Q_.row(k).swap(Q_.row(c));
-            std::swap(pivots_[k], pivots_[c]);
+    void AffineState::ReindexSwapColumns(int k) {
+        if (k != r_ - 1) {
+            A_.col(k).swap(A_.col(r_ - 1));
+            Q_.col(k).swap(Q_.col(r_ - 1));
+            Q_.row(k).swap(Q_.row(r_ - 1));
+            std::swap(pivots_[k], pivots_[r_ - 1]);
         }
     }
 
@@ -133,7 +132,7 @@ namespace stab {
 
         // Step 1:
         std::vector<int> a_ones = A_col_nonzeros(r_ - 1);
-        std::vector<int> q_ones = Q_nonzeros(r_ - 1); // May contain "r_ - 1"
+        std::vector<int> q_ones = Q_nonzeros();
         int u = Q_(r_ - 1, r_ - 1) % 4;
 
         // Step 2:
@@ -143,12 +142,11 @@ namespace stab {
             Q_(rowcol, r_ - 1) = 0;
             Q_(r_ - 1, rowcol) = 0;
         }
+        Q_(r_ - 1, r_ - 1) = 0;
 
         // Step 3:
         if (z == 1) {
-            for (int i : q_ones) {
-                if (i != r_ - 1) Q_(i, i) = (Q_(i, i) + 2) % 4;
-            }
+            for (int i : q_ones) Q_(i, i) = (Q_(i, i) + 2) % 4;
             for (int row : a_ones) b_(row) ^= 1;
             phase_ = (phase_ + 2 * u) % 8;
         }
@@ -159,24 +157,23 @@ namespace stab {
     }
 
     void AffineState::ZeroColumnElim(int c) {
-        // Recall: Matrix A_ has rank r_ and r_+1 columns at this stage
-
         // Step 1:
-        ReindexSwapColumns(c, r_); // Use r_ instead of r_+1 here because of 0-indexing
+        ReindexSwapColumns(c);
 
         // Step 2:
-        std::vector<int> q_ones = Q_nonzeros(r_);
-        int u = Q_(r_, r_) % 4;
+        std::vector<int> q_ones = Q_nonzeros();
+        int u = Q_(r_ - 1, r_ - 1) % 4;
 
         // Step 3:
         for (int rowcol : q_ones) {
-            Q_(rowcol, r_) = 0;
-            Q_(r_, rowcol) = 0;
+            Q_(rowcol, r_-1) = 0;
+            Q_(r_-1, rowcol) = 0;
         }
-        Q_(r_, r_) = 0;
+        Q_(r_-1, r_-1) = 0;
 
         // Step 3.5:
-        pivots_.pop_back(); // <-- Both parts of the if statement in Step 4 require us to do this
+        pivots_.pop_back();
+        --r_;
 
         // Step 4
         if (u % 2 == 1) {
@@ -190,8 +187,6 @@ namespace stab {
                 }
             }
             phase_ = (phase_ - u + 2) % 8;
-            return;
-
         } else { // u is even
             assert(q_ones.size() != 0);
 
@@ -199,10 +194,10 @@ namespace stab {
             std::vector<int> col_ell_nonzeros = A_col_nonzeros(ell);
 
             for (int col : q_ones) {
-                if (col != ell) ReindexSubtColumn(col, ell, col_ell_nonzeros);
+                if (col != ell) ReindexSubtColumn(col, ell, col_ell_nonzeros); // TODO: Check if ok w/r/t r_
             }
 
-            ReindexSwapColumns(r_ - 1, ell); // r_-1 because of 0-indexing. This step also produces A^(3) and Q^(3)
+            ReindexSwapColumns(ell); // r_-1 because of 0-indexing. This step also produces A^(3) and Q^(3)
             // At this point, A_ and Q_ should have r_ columns each. Also, since we removed the zero column in Step 3, the rank of A_ should be r_
             FixFinalBit(u / 2);
         }
@@ -240,23 +235,20 @@ namespace stab {
         
         A_(j, r_) = 1;
         pivots_.push_back(j);
+        ++r_;
 
         // Step 5:
         for (int rowcol : atilde_ones) {
-            Q_(rowcol, r_) = 1;
-            Q_(r_, rowcol) = 1;
+            Q_(rowcol, r_-1) = 1;
+            Q_(r_-1, rowcol) = 1;
         }
-        Q_(r_, r_) = 2 * b_(j);
+        Q_(r_-1, r_-1) = 2 * b_(j);
 
         // Step 6:
         b_(j) = 0;
 
         // Step 7:
-        if (c > -1) {
-            ZeroColumnElim(c);
-        } else {
-            ++r_;
-        }
+        if (c > -1) ZeroColumnElim(c);
     }
 
     void AffineState::CZ(int j, int k) {
@@ -291,37 +283,40 @@ namespace stab {
         // TODO: Use better way to update pivots_
         A_.row(j).swap(A_.row(k));
         b_.row(j).swap(b_.row(k));
+
         int cskip = -1;
+        int pcj, pck;
+        bool pcj_found = false;
+        bool pck_found = false;
         for (int c = 0; c < r_; ++c) {
             if (pivots_[c] == j) {
-                pivots_[c] = k;
-                cskip = c;
-                break;
+                pcj = c;
+                pcj_found = true;
+            } else if (pivots_[c] == k) {
+                pck = c;
+                pck_found = true;
             }
+            if (pcj_found && pck_found) break;
         }
-        for (int c = 0; c < r_; ++c) {
-            if (pivots_[c] == k && c != cskip) {
-                pivots_[c] = j;
-                break;
-            }
-        }
+        if (pcj_found) pivots_[pcj] = k;
+        if (pck_found) pivots_[pck] = j;
     }
 
     void AffineState::S_or_SDG(int j, bool dg) {
         // dg = true means we apply S^\dagger, dg = false means we apply S
         int sign = 1 - 2 * int(dg);  // = +1 for S and -1 for S^\dagger
 
-            std::vector<int> Aj_ones = A_row_nonzeros(j);
-            for (int row : Aj_ones) {
-                for (int col : Aj_ones) {
+        std::vector<int> Aj_ones = A_row_nonzeros(j);
+        for (int row : Aj_ones) {
+            for (int col : Aj_ones) {
+                if (row == col) {
                     Q_(row, col) += 4 + sign * (1 - 2 * b_(j));
-                    if (row == col) {
-                        Q_(row, col) %= 4;
-                    } else {
-                        Q_(row, col) %= 2;
-                    }
+                    Q_(row, col) %= 4;
+                } else {
+                    Q_(row, col) ^= 1;
                 }
             }
+        }
         phase_ = (phase_ + sign * 2 * b_(j) + 8) % 8;
     }
 
@@ -361,7 +356,7 @@ namespace stab {
             }
             for (int k = 0; k < r_; k++) {
                 if (A_(j, k) != 0) {
-                    ReindexSwapColumns(k, r_ - 1);
+                    ReindexSwapColumns(k);
                     break;
                 }
             }

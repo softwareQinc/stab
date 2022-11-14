@@ -68,7 +68,7 @@ namespace stab {
 
         std::vector<int> A_row_nonzeros(int col);
 
-        std::vector<int> Q_nonzeros(int col);
+        std::vector<int> Q_nonzeros();
 
         void FixFinalBit(int z);
 
@@ -76,7 +76,7 @@ namespace stab {
 
         void ReindexSubtColumn(int k, int c, std::vector<int> col_c_nonzeros);
 
-        void ReindexSwapColumns(int k, int c);
+        void ReindexSwapColumns(int k);
 
         void MakePrincipal(int c, int j);
 
