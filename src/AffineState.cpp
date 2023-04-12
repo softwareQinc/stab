@@ -13,10 +13,10 @@
 namespace stab {
 // constructor (initialization):
     AffineState::AffineState(int n) : n_{n}, phase_{0}, r_{0} {
-        pivots_ = std::vector<int>(); // TODO: Not sure how construction works here...
+        pivots_ = std::vector<int>(); 
         pivots_.reserve(n + 1);
         Q_.setZero(n + 1, n + 1);
-        A_.setZero(n, n + 1); // We sometimes need an extra column for workspace
+        A_.setZero(n, n + 1);
         b_.setZero(n);
     }
 
@@ -91,7 +91,7 @@ namespace stab {
 
         for (int row : col_c_nonzeros) A_(row, k) ^= 1;
 
-        // TODO: Optimize Q part
+        // TODO: Optimize Q part? Worst-case complexity won't change
         Q_.col(k) += Q_.col(c);
         Q_.row(k) += Q_.row(c);
         ReduceGramRowCol(k);
@@ -118,6 +118,7 @@ namespace stab {
     }
 
     bool AffineState::ReselectPrincipalRow(int j, int c) {
+        // Performs update if possible and returns flag indicating success or failure
         for (int j_star = 0; j_star < n_; ++j_star) {
             if (A_(j_star, c) != 0 && j_star != j) {
                 MakePrincipal(c, j_star);
@@ -284,22 +285,10 @@ namespace stab {
         A_.row(j).swap(A_.row(k));
         b_.row(j).swap(b_.row(k));
 
-        int cskip = -1;
-        int pcj, pck;
-        bool pcj_found = false;
-        bool pck_found = false;
-        for (int c = 0; c < r_; ++c) {
-            if (pivots_[c] == j) {
-                pcj = c;
-                pcj_found = true;
-            } else if (pivots_[c] == k) {
-                pck = c;
-                pck_found = true;
-            }
-            if (pcj_found && pck_found) break;
-        }
-        if (pcj_found) pivots_[pcj] = k;
-        if (pck_found) pivots_[pck] = j;
+        auto it_j = std::find(pivots_.begin(), pivots_.end(), j);
+        auto it_k = std::find(pivots_.begin(), pivots_.end(), k);
+        if (it_j != pivots_.end()) *it_j = k;
+        if (it_k != pivots_.end()) *it_k = j;
     }
 
     void AffineState::S_or_SDG(int j, bool dg) {
@@ -328,8 +317,11 @@ namespace stab {
 
     void AffineState::Z(int j) {
         phase_ = (phase_ + 4 * (b_(j))) % 8;
-        std::vector<int> Aj_ones = A_row_nonzeros(j);
-        for (int i : Aj_ones) Q_(i, i) = (Q_(i, i) + 2) % 4;
+        for (int i = 0; i < r_; ++i) {
+            if (A_(j, i) != 0) {
+                Q_(i, i) = (Q_(i, i) + 2) % 4;
+            }
+        }
     }
 
     void AffineState::Y(int j) {
@@ -371,6 +363,7 @@ namespace stab {
         for (int i = 0; i < r_; ++i) x(i) = random_bit();
 
         vec_u_t tmp = ReduceMod2(A_.block(0,0,n_,r_) * x + b_);
+
         std::vector<int> result(n_);
         for (int i = 0; i < n_; ++i) result[i] = tmp(i);
 
@@ -388,12 +381,11 @@ namespace stab {
 
     void AffineState::Reset(int j) {
         int tmp = MeasureZ(j);
-        if (tmp == 1) {
-            X(j);
-        }
+        if (tmp == 1) X(j);
     }
 
     Eigen::VectorXcd AffineState::to_vec() const {
+        // SUPER ugly way to get the statevector. Only needed for unit tests.
         if (n_ > 16) {
             throw std::logic_error("Maximum number of qubits for statevector "
                                    "representation is 15");
