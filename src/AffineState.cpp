@@ -333,6 +333,9 @@ namespace stab {
     int AffineState::MeasureZ(int j, bool postselect,
                               int postselected_outcome) {
         // Default parameters are postselect=false, postselected_outcome=0
+        if (postselected_outcome != 0 && postselected_outcome != 1) {
+            throw std::logic_error("Measurement outcome must be 0 or 1");
+        }
         if (A_.row(j).isZero()) { // Deterministic case
             if (postselect && b_(j) != postselected_outcome) {
                 throw std::logic_error("Postselection impossible");
