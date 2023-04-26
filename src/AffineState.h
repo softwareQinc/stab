@@ -1,6 +1,7 @@
 /**
 \file AffineState.h
 \brief All functions needed for affine state-based simulation described in arXiv:2109.08629
+\author softwareQ
 */
 
 #pragma once
@@ -26,50 +27,86 @@ namespace stab {
 
         AffineState(const AffineState &other);
 
-        void CZ(int a, int b); /*! \brief Controlled-\f$ Z \f$ gate*/
-        void CX(int a, int b); /*! \brief Controlled-\f$ X \f$ gate
-                               * \param a Control qubit
-                               * \param b Target qubit
-                               */
-        void SWAP(int a, int b); /*! \brief Swap gate*/
-        void S(int j); /*! \brief The gate \f$S = |0\rangle\langle0| + i|1\rangle\langle1|\f$ */
-        void SDG(int j); /*! \brief The gate \f$S^\dagger = |0\rangle\langle0| - i|1\rangle\langle1|\f$*/
-        void H(int a);   /*! \brief Hadamard gate */
-        void X(int j); /*! \brief Pauli \f$ X \f$ gate*/
-        void Y(int j); /*! \brief Pauli \f$ Y \f$ gate*/
-        void Z(int j); /*! \brief Pauli \f$ Z \f$ gate*/
+        /*! \brief Controlled-\f$ Z \f$ gate*/
+        void CZ(int j, int k);
+
+        /*! \brief Controlled-\f$ X \f$ gate
+        * \param j Control qubit
+        * \param k Target qubit
+        */
+        void CX(int j, int k); 
+
+        /*! \brief Swap gate*/
+        void SWAP(int j, int k); 
+
+        /*! \brief The gate \f$S = |0\rangle\langle0| + i|1\rangle\langle1|\f$ */
+        void S(int j); 
+
+        /*! \brief The gate \f$S^\dagger = |0\rangle\langle0| - i|1\rangle\langle1|\f$*/
+        void SDG(int j); 
+
+        /*! \brief Hadamard gate */
+        void H(int j);   
+
+        /*! \brief Pauli \f$ X \f$ gate*/
+        void X(int j); 
+
+        /*! \brief Pauli \f$ Y \f$ gate*/
+        void Y(int j); 
+
+        /*! \brief Pauli \f$ Z \f$ gate*/
+        void Z(int j); 
+
+        /*! \brief Measure a single qubit
+        * \param j Index of qubit to be measured
+        * \param postselect Optional flag indicating whether postselection should be used
+        * \param postselected_outcome Desired measurement outcome if postselection is used. Throws error if postselection is chosen but is impossible. 
+        * \return Measurement outcome (0 or 1)
+        */
         int MeasureZ(int j, bool postselect = false,
-                     int postselected_outcome = 0);  /*! \brief Measure a single qubit
-                                                     * \param j Index of qubit to be measured
-                                                     * \param postselect Optional flag indicating whether postselection should be used
-                                                     * \param postselected_outcome Desired measurement outcome if postselection is used. Throws error if postselection is chosen but is impossible. 
-                                                     * \return Measurement outcome (0 or 1)
-                                                     */
-        void Reset(int j); /*! \brief Resets qubit to \f$|0\rangle\f$*/
-        std::vector<int> MeasureAll() const; /*! \brief Measure all qubits
-                                             * \return Vector of measurement outcomes
-                                             */
-        std::map<std::vector<int>, int> Sample(int nreps) const; /*! \brief Sample the state repeatedly
-                                                                 * \param nreps Number of samples
-                                                                 * \return Map whose keys are vectors of measurement outcomes and whose values are number of observations with each result
-                                                                 */
-        Eigen::VectorXcd to_vec() const; /*!\brief Construct full statevector*/
+                     int postselected_outcome = 0);  
+
+        /*! \brief Resets qubit to \f$|0\rangle\f$*/
+        void Reset(int j); 
+
+        /*! \brief Measure all qubits
+        * \return Vector of measurement outcomes
+        */
+        std::vector<int> MeasureAll() const; 
+
+        /*! \brief Sample the state repeatedly
+        * \param nreps Number of samples
+        * \return Map whose keys are vectors of measurement outcomes and whose values are number of observations with each result
+        */
+        std::map<std::vector<int>, int> Sample(int nreps) const; 
+
+        /*!\brief Construct full statevector*/
+        Eigen::VectorXcd to_vec() const;
 
         // Get member variables:
-        int n() const; /*! \brief Get number of qubits*/
 
-        int phase() const;  /*! \brief Get value \f$ p \f$ such that global phase is \f$ e^{ip\pi/4}\f$ */
+        /*! \brief Get number of qubits*/
+        int n() const; 
 
-        mat_u_t Q() const;  /*! \brief Get \f$ Q \f$ matrix containing phases */
+        /*! \brief Get value \f$ p \f$ such that global phase is \f$ e^{ip\pi/4}\f$ */
+        int phase() const;  
 
-        mat_u_t A() const;  /*! \brief Get \f$ A \f$ generating the affine space*/
+        /*! \brief Get \f$ Q \f$ matrix containing phases */
+        mat_u_t Q() const;  
 
-        vec_u_t b() const; /*! \brief Get offset vector \f$ b \f$*/
+        /*! \brief Get \f$ A \f$ generating the affine space*/
+        mat_u_t A() const;  
 
-        std::vector<int> pivots() const; /*! \brief Get the principal index map. Entry \f$ i \f$ corresponds to the value \f$ p(i) \f$.*/
+        /*! \brief Get offset vector \f$ b \f$*/
+        vec_u_t b() const; 
 
-        int r() const; /*! \brief Get rank \f$ r \f$ of generating matrix*/
+        /*! \brief Get the principal index map. Entry \f$ i \f$ corresponds to the value \f$ p(i) \f$.*/
+        std::vector<int> pivots() const;
 
+        /*! \brief Get rank \f$ r \f$ of generating matrix*/
+        int r() const; 
+
+        /*! \brief Print state in human-readable format*/
         friend std::ostream &operator<<(std::ostream &out, AffineState const &psi);
 
     private:

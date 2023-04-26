@@ -150,7 +150,7 @@ TEST(CompareWithQPP, Measurements) {
 
         qpp::QCircuit qc = qpp::qasm::read(prog_stream);
         for (int i = 0; i < psi1.n(); ++i) {
-            qc.measureZ(i, i);
+            qc.measure(i, i);
         }
 
         qpp::QEngine qe(qc);

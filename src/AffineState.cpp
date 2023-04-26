@@ -273,10 +273,10 @@ namespace stab {
         phase_ = (phase_ + 4 * b_(j) * b_(k)) % 8;
     }
 
-    void AffineState::CX(int h, int j) {
-        int c = piv_col(j);
-        for (int col : A_row_nonzeros(h)) A_(j, col) ^= 1;
-        b_(j) ^= b_(h);
+    void AffineState::CX(int j, int k) {
+        int c = piv_col(k);
+        for (int col : A_row_nonzeros(j)) A_(k, col) ^= 1;
+        b_(k) ^= b_(j);
         if (c != -1) ReselectPrincipalRow(-1, c);
     }
 

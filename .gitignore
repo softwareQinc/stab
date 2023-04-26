@@ -6,6 +6,10 @@
 /out*
 CMakeSettings.json
 
+# VS Code
+.vscode
+.cache
+
 # CLion
 .idea/
 build/

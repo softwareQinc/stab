@@ -73,7 +73,7 @@ int main() {
     std::fstream infile(fname);
     std::cout << "Start\n";
     run_stim(infile, 1200);
-    std::cout << "End\n";
+    std::cout << "End!\n";
 
 
     // std::cout << "Beginning tests \n";
