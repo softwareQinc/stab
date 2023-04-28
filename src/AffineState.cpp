@@ -11,7 +11,6 @@
 #include "random.h"
 
 namespace stab {
-// constructor (initialization):
     AffineState::AffineState(int n) : n_{n}, phase_{0}, r_{0} {
         pivots_ = std::vector<int>(); 
         pivots_.reserve(n + 1);
@@ -58,7 +57,7 @@ namespace stab {
     }
 
     std::vector<int> AffineState::Q_nonzeros() {
-        // Returns location of nonzeros in last col of Q, ignoring the diagonal entry
+        // Returns location of nonzeros in last col of Q, IGNORING THE DIAGONAL ENTRY
         std::vector<int> ones;
         ones.reserve(r_ - 1);
         for (int row = 0; row < r_ - 1; ++row) {
@@ -79,7 +78,7 @@ namespace stab {
     }
 
     void AffineState::ReduceGramRowCol(int c) {
-        int new_qcc = Q_(c, c) % 4; // Need to store since gets reduced mod 2 below
+        int new_qcc = Q_(c, c) % 4;
         Q_.row(c) = ReduceMod2(Q_.row(c));
         Q_.col(c) = ReduceMod2(Q_.col(c));
         Q_(c, c) = new_qcc;
@@ -206,13 +205,9 @@ namespace stab {
 
     int AffineState::piv_col(int row_number) {
         // Given a row number, return the index of the column j for in which that row has a pivot, and return -1 otherwise
-        // TODO: Optimize
-        for (int i = 0; i < r_; ++i) {
-            if (pivots_[i] == row_number) {
-                return i;
-            }
-        }
-        return -1;
+        auto it = std::find(pivots_.begin(), pivots_.end(), row_number);
+        if (it != pivots_.end()) return it - pivots_.begin();
+        else return -1;
     }
 
 // GATES:
@@ -281,7 +276,6 @@ namespace stab {
     }
 
     void AffineState::SWAP(int j, int k) {
-        // TODO: Use better way to update pivots_
         A_.row(j).swap(A_.row(k));
         b_.row(j).swap(b_.row(k));
 
@@ -349,7 +343,7 @@ namespace stab {
             } else {
                 beta = random_bit();
             }
-            for (int k = 0; k < r_; k++) {
+            for (int k = 0; k < r_; ++k) {
                 if (A_(j, k) != 0) {
                     ReindexSwapColumns(k);
                     break;

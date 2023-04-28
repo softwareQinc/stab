@@ -23,8 +23,10 @@ namespace stab {
     class AffineState {
     public:
 
+        /*! \brief Create the state \f$|0^n\rangle\f$ */
         explicit AffineState(int n);
 
+        /*! \brief Copy constructor*/
         AffineState(const AffineState &other);
 
         /*! \brief Controlled-\f$ Z \f$ gate*/
