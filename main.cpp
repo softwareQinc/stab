@@ -75,7 +75,6 @@ int main() {
     run_stim(infile, 1200);
     std::cout << "End!\n";
 
-
     // std::cout << "Beginning tests \n";
 
     // std::vector<std::pair<int, double>> times;
