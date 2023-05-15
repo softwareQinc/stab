@@ -30,6 +30,10 @@ endif ()
 add_library(stab-common SHARED ${SOURCES} "benchmarking/stab_tests.cpp")
 target_link_libraries(stab-common qasmtools Eigen3::Eigen ${QPP_LINK_DEPS} libqpp)
 
+#### Maximum number of qubits allowed in qpp::AffineState::to_ket()
+set(MAX_QUBITS_STATE_VECTOR "16" CACHE STRING "Maximum number of qubits allowed in AffineState::to_ket()")
+add_compile_definitions(MAX_QUBITS_STATE_VECTOR=${MAX_QUBITS_STATE_VECTOR})
+
 add_executable(stab main.cpp)
 target_link_libraries(stab stab-common qasmtools ${QPP_LINK_DEPS} libqpp)
 

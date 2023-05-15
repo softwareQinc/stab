@@ -406,6 +406,7 @@ void AffineState::Reset(int j) {
 qpp::ket AffineState::to_ket() const {
     using namespace qpp;
 
+    // MAX_QUBITS_STATE_VECTOR is injected into the code from the CMakeLists.txt
     if (n_ > MAX_QUBITS_STATE_VECTOR) {
         throw std::logic_error(
             "Maximum number of qubits for state vector representation is " +
