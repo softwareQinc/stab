@@ -241,6 +241,10 @@ TEST(RunRandomQASM, Identity) {
     EXPECT_TRUE(success);
 }
 
+// TODO check this please, fails once in a blue moon
+// To run multiple times and stop when the test fails, execute (from inside
+// ./build): ./unit_tests/unit_tests --gtest_filter=CompareWithQPP.*
+// --gtest_repeat=1000 --gtest_throw_on_failure
 TEST(CompareWithQPP, NoMeasurements) {
     // Run the same circuit with qpp and stab and compare results
     bool success = true;
