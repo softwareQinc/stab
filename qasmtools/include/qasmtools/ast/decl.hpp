@@ -1,7 +1,7 @@
 /*
- * This file is part of qasmtools_stab.
+ * This file is part of qasmtools.
  *
- * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
+ * Copyright (c) 2019 - 2023 softwareQ Inc. All rights reserved.
  *
  * MIT License
  *
@@ -25,17 +25,18 @@
  */
 
 /**
- * \file qasmtools_stab/ast/decl.hpp
+ * \file qasmtools/ast/decl.hpp
  * \brief OpenQASM declarations
  */
 
-#pragma once
+#ifndef QASMTOOLS_AST_DECL_HPP_
+#define QASMTOOLS_AST_DECL_HPP_
 
 #include "stmt.hpp"
 
 #include <list>
 
-namespace qasmtools_stab {
+namespace qasmtools {
 namespace ast {
 
 #if USE_OPENQASM2_SPECS
@@ -46,7 +47,7 @@ static const std::set<std::string_view> qelib_defs{
 #else
 /**
  * \brief Qiskit definitions include r and cswap gates, see
- * qasmtools_stab/parser/preprocessor.hpp
+ * qasmtools/parser/preprocessor.hpp
  */
 static const std::set<std::string_view> qelib_defs{
     "u3", "u2", "u1",   "cx", "id",  "u0",    "x",   "y",   "z",
@@ -65,7 +66,7 @@ inline bool is_std_qelib(const std::string& id) {
 }
 
 /**
- * \class qasmtools_stab::ast::Decl
+ * \class qasmtools::ast::Decl
  * \brief Base class for OpenQASM declarations
  *
  * Declarations are attribute classes as they can occur in different
@@ -89,10 +90,10 @@ class Decl {
 };
 
 /**
- * \class qasmtools_stab::ast::GateDecl
+ * \class qasmtools::ast::GateDecl
  * \brief Class for gate declarations
- * \see qasmtools_stab::ast::Stmt
- * \see qasmtools_stab::ast::Decl
+ * \see qasmtools::ast::Stmt
+ * \see qasmtools::ast::Decl
  */
 class GateDecl final : public Stmt, public Decl {
     bool opaque_;                  ///< whether the declaration is opaque
@@ -221,9 +222,9 @@ class GateDecl final : public Stmt, public Decl {
 };
 
 /**
- * \class qasmtools_stab::ast::OracleDecl
+ * \class qasmtools::ast::OracleDecl
  * \brief Class for oracle declarations
- * \see qasmtools_stab::ast::Decl
+ * \see qasmtools::ast::Decl
  */
 class OracleDecl final : public Stmt, public Decl {
     std::vector<symbol> params_; ///< quantum parameters
@@ -281,9 +282,9 @@ class OracleDecl final : public Stmt, public Decl {
 };
 
 /**
- * \class qasmtools_stab::ast::RegisterDecl
+ * \class qasmtools::ast::RegisterDecl
  * \brief Class for register declarations
- * \see qasmtools_stab::ast::Decl
+ * \see qasmtools::ast::Decl
  */
 class RegisterDecl final : public Stmt, public Decl {
     bool quantum_; ///< whether the register is quantum
@@ -336,9 +337,9 @@ class RegisterDecl final : public Stmt, public Decl {
 };
 
 /**
- * \class qasmtools_stab::ast::AncillaDecl
+ * \class qasmtools::ast::AncillaDecl
  * \brief Class for local register declarations
- * \see qasmtools_stab::ast::Decl
+ * \see qasmtools::ast::Decl
  */
 class AncillaDecl final : public Gate, public Decl {
     bool dirty_; ///< whether the register can be dirty
@@ -392,5 +393,7 @@ class AncillaDecl final : public Gate, public Decl {
     }
 };
 
-} // namespace ast
-} // namespace qasmtools_stab
+} /* namespace ast */
+} /* namespace qasmtools */
+
+#endif /* QASMTOOLS_AST_DECL_HPP_ */

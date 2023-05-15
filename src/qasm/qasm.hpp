@@ -1,13 +1,14 @@
-#pragma once
+#ifndef STAB_QASM_HPP_
+#define STAB_QASM_HPP_
 
-#include "qasmtools_stab/ast/ast.hpp"
-#include "qasmtools_stab/parser/parser.hpp"
-#include "qasmtools_stab/utils/angle.hpp"
+#include "qasmtools/ast/ast.hpp"
+#include "qasmtools/parser/parser.hpp"
+#include "qasmtools/utils/angle.hpp"
 
 namespace stab::qasm_simulator {
 
-namespace ast = qasmtools_stab::ast;
-namespace parser = qasmtools_stab::parser;
+namespace ast = qasmtools::ast;
+namespace parser = qasmtools::parser;
 
 class QASMSimulator final : public ast::Visitor {
     stab::AffineState psi;
@@ -90,9 +91,7 @@ class QASMSimulator final : public ast::Visitor {
         }
     }
 
-    void visit(ast::PiExpr&) override {
-        temp_value = qasmtools_stab::utils::pi;
-    }
+    void visit(ast::PiExpr&) override { temp_value = qasmtools::utils::pi; }
 
     void visit(ast::IntExpr& expr) override {
         temp_value = static_cast<double>(expr.value());
@@ -293,3 +292,5 @@ inline void simulate_file(const std::string& fname) {
 }
 
 } /* namespace stab::qasm_simulator */
+
+#endif /* STAB_QASM_HPP_ */

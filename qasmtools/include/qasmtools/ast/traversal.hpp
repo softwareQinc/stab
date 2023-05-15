@@ -1,7 +1,7 @@
 /*
- * This file is part of qasmtools_stab.
+ * This file is part of qasmtools.
  *
- * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
+ * Copyright (c) 2019 - 2023 softwareQ Inc. All rights reserved.
  *
  * MIT License
  *
@@ -25,22 +25,23 @@
  */
 
 /**
- * \file qasmtools_stab/ast/traversal.hpp
+ * \file qasmtools/ast/traversal.hpp
  * \brief Node traversal for syntax trees
  */
 
-#pragma once
+#ifndef QASMTOOLS_AST_TRAVERSAL_HPP_
+#define QASMTOOLS_AST_TRAVERSAL_HPP_
 
 #include "program.hpp"
 #include "visitor.hpp"
 
-namespace qasmtools_stab {
+namespace qasmtools {
 namespace ast {
 
 /**
- * \class qasmtools_stab::ast::Traverse
+ * \class qasmtools::ast::Traverse
  * \brief Generic complete traversal of ASTs
- * \see qasmtools_stab::ast::Visitor
+ * \see qasmtools::ast::Visitor
  *
  * Implements a generic, pass-through traversal of the entire
  * AST. Standard usage is to derive from this class and override only
@@ -106,5 +107,7 @@ class Traverse : public Visitor {
     }
 };
 
-} // namespace ast
-} // namespace qasmtools_stab
+} /* namespace ast */
+} /* namespace qasmtools */
+
+#endif /* QASMTOOLS_AST_TRAVERSAL_HPP_ */

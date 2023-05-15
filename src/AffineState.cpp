@@ -1,9 +1,10 @@
 #include <algorithm>
-#include <cstdlib>
+#include <cmath>
+#include <complex>
+#include <exception>
 #include <iostream>
-#include <random>
+#include <string>
 #include <vector>
-#include <bitset>
 
 #include <Eigen/Dense>
 
@@ -402,49 +403,49 @@ void AffineState::Reset(int j) {
         X(j);
 }
 
-Eigen::VectorXcd AffineState::to_vec() const {
+qpp::ket AffineState::to_ket() const {
     using namespace qpp;
-    using namespace qpp::literals;
 
-    // SUPER ugly way to get the statevector. Only needed for unit tests.
-    if (n_ > 16) {
-        throw std::logic_error("Maximum number of qubits for statevector "
-                               "representation is 16");
+    if (n_ > MAX_QUBITS_STATE_VECTOR) {
+        throw std::logic_error(
+            "Maximum number of qubits for state vector representation is " +
+            std::to_string(MAX_QUBITS_STATE_VECTOR));
     }
 
-    auto D = static_cast<idx>(std::pow(2, n_));
-    auto Dr = static_cast<idx>(std::pow(2, r_));
+    auto D = static_cast<unsigned>(std::pow(2, n_));
+    auto dims = std::vector<unsigned>(n_, 2);
 
-    ket psi = ket::Zero(D); // This will be the statevector
-    std::vector<idx> dims_r(r_, 2);
-    for (int k = 0; k < Dr; ++k) {
+    auto D_r = static_cast<unsigned>(std::pow(2, r_));
+    auto dims_r = std::vector<unsigned>(r_, 2);
+
+    ket psi = ket::Zero(D); // This will be the state vector
+
+    for (unsigned k = 0; k < D_r; ++k) {
         // For each x \in \{0,1\}^ncols, we now add the corresponding term to
         // psi
 
         // First, let x = vector whose entries are the binary digits of k:
-        auto bs = n2multiidx(k, dims_r); // binary representation of k
         vec_u_t x(r_);
-        std::copy(bs.begin(), bs.end(), x.data());
+        internal::n2multiidx(k, dims_r.size(), dims_r.data(), x.data());
 
         // Figure out which basis state x results in:
-        vec_u_t ket = ReduceMod2(A_.block(0, 0, n_, r_) * x + b_);
-        // "ket" is the binary representation of some number basis_state_number.
-        // We need to add the correct amplitude into psi[basis_state_number].
-        // Note that AffineState puts the zero-th qubit on the left, but most
-        // people put it on the right, so we also make this conversion.
+        vec_u_t basis_state_x = ReduceMod2(A_.block(0, 0, n_, r_) * x + b_);
+        // "basis_state_x" is the binary representation of some number
+        // basis_state_number.
 
-        int basis_state_number = 0;
-        for (int j = 0; j < n_; ++j) {
-            basis_state_number +=
-                int(ket(j) * pow(2, n_ - 1 - j)); // Conversion
-        }
+        // Convert back to a number
+        auto basis_state_number = internal::multiidx2n(
+            basis_state_x.data(), dims.size(), dims.data());
 
-        std::complex<double> phase =
+        // Compute the phase
+        cplx phase =
             (2 * (x.transpose() * Q_.block(0, 0, r_, r_) * x)[0] + phase_);
+
+        // Fill in corresponding element of psi
         psi(basis_state_number) += std::exp(1.0_i * qpp::pi * phase / 4.0);
     }
 
-    return psi / std::sqrt(Dr);
+    return psi / std::sqrt(D_r);
 }
 
 std::ostream& operator<<(std::ostream& out, AffineState const& psi) {

@@ -1,7 +1,7 @@
 /*
- * This file is part of qasmtools_stab.
+ * This file is part of qasmtools.
  *
- * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
+ * Copyright (c) 2019 - 2023 softwareQ Inc. All rights reserved.
  *
  * MIT License
  *
@@ -27,22 +27,23 @@
  */
 
 /**
- * \file qasmtools_stab/parser/lexer.hpp
+ * \file qasmtools/parser/lexer.hpp
  * \brief Lexical analysis
  */
 
-#pragma once
+#ifndef QASMTOOLS_PARSER_LEXER_HPP_
+#define QASMTOOLS_PARSER_LEXER_HPP_
 
 #include "token.hpp"
 
 #include <cctype>
 #include <memory>
 
-namespace qasmtools_stab {
+namespace qasmtools {
 namespace parser {
 
 /**
- * \class qasmtools_stab::parser::Lexer
+ * \class qasmtools::parser::Lexer
  * \brief openPARSER lexer class
  *
  * The Lexer reads from (a shared_ptr to) an istream object given during
@@ -375,5 +376,7 @@ class Lexer {
     }
 };
 
-} // namespace parser
-} // namespace qasmtools_stab
+} /* namespace parser */
+} /* namespace qasmtools */
+
+#endif /* QASMTOOLS_PARSER_LEXER_HPP_ */

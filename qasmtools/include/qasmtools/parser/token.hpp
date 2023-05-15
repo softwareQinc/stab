@@ -1,7 +1,7 @@
 /*
- * This file is part of qasmtools_stab.
+ * This file is part of qasmtools.
  *
- * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
+ * Copyright (c) 2019 - 2023 softwareQ Inc. All rights reserved.
  *
  * MIT License
  *
@@ -27,24 +27,25 @@
  */
 
 /**
- * \file qasmtools_stab/parser/token.hpp
+ * \file qasmtools/parser/token.hpp
  * \brief Tokens
  */
 
-#pragma once
+#ifndef QASMTOOLS_PARSER_TOKEN_HPP_
+#define QASMTOOLS_PARSER_TOKEN_HPP_
 
 #include "position.hpp"
 
 #include <unordered_map>
 #include <variant>
 
-namespace qasmtools_stab {
+namespace qasmtools {
 namespace parser {
 
 /**
- * \class qasmtools_stab::parser::Token
+ * \class qasmtools::parser::Token
  * \brief OpenQASM token class
- * \see qasmtools_stab::parser::Lexer
+ * \see qasmtools::parser::Lexer
  */
 class Token {
   public:
@@ -104,7 +105,7 @@ class Token {
      * \brief Extraction operator overload
      *
      * \param os Output stream passed by reference
-     * \param k qasmtools_stab::parser::Kind enum class
+     * \param k qasmtools::parser::Kind enum class
      * \return Reference to the output stream
      */
     friend std::ostream& operator<<(std::ostream& os, const Kind& k) {
@@ -385,5 +386,7 @@ static const std::unordered_map<std::string, Token::Kind> keywords{
     {"dirty", Token::Kind::kw_dirty},
     {"ancilla", Token::Kind::kw_ancilla}};
 
-} // namespace parser
-} // namespace qasmtools_stab
+} /* namespace parser */
+} /* namespace qasmtools */
+
+#endif /* QASMTOOLS_PARSER_TOKEN_HPP_ */

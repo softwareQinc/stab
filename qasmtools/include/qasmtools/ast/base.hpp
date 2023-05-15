@@ -1,7 +1,7 @@
 /*
- * This file is part of qasmtools_stab.
+ * This file is part of qasmtools.
  *
- * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
+ * Copyright (c) 2019 - 2023 softwareQ Inc. All rights reserved.
  *
  * MIT License
  *
@@ -25,11 +25,12 @@
  */
 
 /**
- * \file qasmtools_stab/ast/base.hpp
+ * \file qasmtools/ast/base.hpp
  * \brief OpenQASM syntax trees
  */
 
-#pragma once
+#ifndef QASMTOOLS_AST_BASE_HPP_
+#define QASMTOOLS_AST_BASE_HPP_
 
 #include "../parser/position.hpp"
 #include "cloneable.hpp"
@@ -38,7 +39,7 @@
 #include <memory>
 #include <set>
 
-namespace qasmtools_stab {
+namespace qasmtools {
 namespace ast {
 
 template <typename T>
@@ -47,7 +48,7 @@ using ptr = std::unique_ptr<T>;
 using symbol = std::string;
 
 /**
- * \class qasmtools_stab::ast::ASTNode
+ * \class qasmtools::ast::ASTNode
  * \brief Base class for AST nodes
  */
 class ASTNode : public object::cloneable<ASTNode> {
@@ -103,5 +104,7 @@ class ASTNode : public object::cloneable<ASTNode> {
     }
 };
 
-} // namespace ast
-} // namespace qasmtools_stab
+} /* namespace ast */
+} /* namespace qasmtools */
+
+#endif /* QASMTOOLS_AST_BASE_HPP_ */

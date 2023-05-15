@@ -1,7 +1,7 @@
 /*
- * This file is part of qasmtools_stab.
+ * This file is part of qasmtools.
  *
- * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
+ * Copyright (c) 2019 - 2023 softwareQ Inc. All rights reserved.
  *
  * MIT License
  *
@@ -25,15 +25,16 @@
  */
 
 /**
- * \file qasmtools_stab/tools/ast_printer.hpp
+ * \file qasmtools/tools/ast_printer.hpp
  * \brief Direct AST printer for debugging
  */
 
-#pragma once
+#ifndef QASMTOOLS_TOOLS_ASTPRINTER_HPP_
+#define QASMTOOLS_TOOLS_ASTPRINTER_HPP_
 
 #include "../ast/ast.hpp"
 
-namespace qasmtools_stab {
+namespace qasmtools {
 namespace tools {
 
 class ASTPrinter final : public ast::Visitor {
@@ -205,5 +206,7 @@ void print_tree(ast::ASTNode& node, std::ostream& os = std::cout) {
     node.accept(printer);
 }
 
-} // namespace tools
-} // namespace qasmtools_stab
+} /* namespace tools */
+} /* namespace qasmtools */
+
+#endif /* QASMTOOLS_TOOLS_ASTPRINTER_HPP_ */

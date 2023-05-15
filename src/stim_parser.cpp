@@ -1,13 +1,12 @@
-#include <iostream>
-#include <sstream>
 #include <fstream>
+#include <iostream>
 #include <numeric>
+#include <sstream>
 
 #include "AffineState.h"
 
-using namespace stab;
-
-AffineState run_stim(std::fstream& infile, int nq) {
+stab::AffineState run_stim(std::fstream& infile, int nq) {
+    using namespace stab;
     AffineState psi(nq);
     std::string line;
     while (std::getline(infile, line)) {

@@ -1,7 +1,7 @@
 /*
- * This file is part of qasmtools_stab.
+ * This file is part of qasmtools.
  *
- * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
+ * Copyright (c) 2019 - 2023 softwareQ Inc. All rights reserved.
  *
  * MIT License
  *
@@ -25,11 +25,12 @@
  */
 
 /**
- * \file qasmtools_stab/ast/semantic.hpp
+ * \file qasmtools/ast/semantic.hpp
  * \brief Semantic analysis for syntax trees
  */
 
-#pragma once
+#ifndef QASMTOOLS_AST_SEMANTIC_HPP_
+#define QASMTOOLS_AST_SEMANTIC_HPP_
 
 #include "ast.hpp"
 #include "visitor.hpp"
@@ -39,11 +40,11 @@
 #include <set>
 #include <unordered_map>
 
-namespace qasmtools_stab {
+namespace qasmtools {
 namespace ast {
 
 /**
- * \class qasmtools_stab::ast::SemanticError
+ * \class qasmtools::ast::SemanticError
  * \brief Exception class for semantic errors
  */
 class SemanticError : public std::exception {
@@ -54,13 +55,13 @@ class SemanticError : public std::exception {
 };
 
 /**
- * \class qasmtools_stab::ast::BitType
+ * \class qasmtools::ast::BitType
  * \brief Enum for types of bits
  */
 enum class BitType { Cbit, Qubit };
 
 /**
- * \struct qasmtools_stab::ast::GateType
+ * \struct qasmtools::ast::GateType
  * \brief Data struct for gate types
  */
 struct GateType {
@@ -69,7 +70,7 @@ struct GateType {
 };
 
 /**
- * \struct qasmtools_stab::ast::RegisterType
+ * \struct qasmtools::ast::RegisterType
  * \brief Data struct for register types
  */
 struct RegisterType {
@@ -78,7 +79,7 @@ struct RegisterType {
 };
 
 /**
- * \struct qasmtools_stab::ast::RealType
+ * \struct qasmtools::ast::RealType
  * \brief Empty structure denoting a real type
  */
 struct RealType {};
@@ -92,13 +93,13 @@ struct RealType {};
 using Type = std::variant<BitType, GateType, RegisterType, RealType>;
 
 /**
- * \class qasmtools_stab::ast::SemanticChecker
+ * \class qasmtools::ast::SemanticChecker
  * \brief Implementation of the semantic analysis compiler phase
- * \see qasmtools_stab::ast::Visitor
+ * \see qasmtools::ast::Visitor
  *
  * Checks for anything that could cause a run-time error -- notably,
  * type errors, invalid uniform gates, etc. Use the functional
- * interface qasmtools_stab::ast::check_source instead.
+ * interface qasmtools::ast::check_source instead.
  */
 class SemanticChecker final : public Visitor {
   public:
@@ -470,5 +471,7 @@ inline void check_source(Program& prog) {
         throw SemanticError();
 }
 
-} // namespace ast
-} // namespace qasmtools_stab
+} /* namespace ast */
+} /* namespace qasmtools */
+
+#endif /* QASMTOOLS_AST_SEMANTIC_HPP_ */

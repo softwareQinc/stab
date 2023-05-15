@@ -1,7 +1,7 @@
 /*
- * This file is part of qasmtools_stab.
+ * This file is part of qasmtools.
  *
- * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
+ * Copyright (c) 2019 - 2023 softwareQ Inc. All rights reserved.
  *
  * MIT License
  *
@@ -25,19 +25,20 @@
  */
 
 /**
- * \file qasmtools_stab/parser/position.hpp
+ * \file qasmtools/parser/position.hpp
  */
 
-#pragma once
+#ifndef QASMTOOLS_PARSER_POSITION_HPP_
+#define QASMTOOLS_PARSER_POSITION_HPP_
 
 #include <iostream>
 #include <string>
 
-namespace qasmtools_stab {
+namespace qasmtools {
 namespace parser {
 
 /**
- * \class qasmtools_stab::parser::Position
+ * \class qasmtools::parser::Position
  * \brief Positions in source code
  */
 class Position {
@@ -65,7 +66,7 @@ class Position {
      * \brief Extraction operator overload
      *
      * \param os Output stream
-     * \param pos qasmtools_stab::parser::Position
+     * \param pos qasmtools::parser::Position
      * \return Reference to the output stream
      */
     friend std::ostream& operator<<(std::ostream& os, const Position& pos) {
@@ -114,5 +115,7 @@ class Position {
     void advance_column(int num = 1) { column_ += num; }
 };
 
-} // namespace parser
-} // namespace qasmtools_stab
+} /* namespace parser */
+} /* namespace qasmtools */
+
+#endif /* QASMTOOLS_PARSER_POSITION_HPP_ */

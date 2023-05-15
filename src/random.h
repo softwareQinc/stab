@@ -1,4 +1,5 @@
-#pragma once
+#ifndef STAB_RANDOM_H_
+#define STAB_RANDOM_H_
 
 #include <random>
 
@@ -22,4 +23,6 @@ T random_real(T a = std::numeric_limits<T>::min(),
     std::uniform_real_distribution<T> dist{a, b};
     return dist(get_prng_engine());
 }
-} // namespace stab
+} /* namespace stab */
+
+#endif /* STAB_RANDOM_H_ */

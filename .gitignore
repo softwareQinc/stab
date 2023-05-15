@@ -1,14 +1,21 @@
 # Vim
 *.swp
 
-# MSVC 
+# Emacs
+\#*\#
+*~
+
+# clangd
+.cache/
+compile_commands.json
+
+# MSVC
 .vs/
 /out*
 CMakeSettings.json
 
 # VS Code
-.vscode
-.cache
+.vscode/
 
 # CLion
 .idea/
@@ -18,10 +25,19 @@ cmake-build*/
 # Windows build
 win/
 
+# pyqpp
+Makefile
+cmake_install.cmake
+CMakeCache.txt
+CMakeFiles/
+pyqpp.egg-info/
+
 # Documentation source files
 doc/
 
 # Misc
 .DS_Store
-_test.cpp
+examples/_*.cpp
 out.tmp
+.cmake/
+Testing/

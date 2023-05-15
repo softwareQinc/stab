@@ -1,7 +1,7 @@
 /*
- * This file is part of qasmtools_stab.
+ * This file is part of qasmtools.
  *
- * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
+ * Copyright (c) 2019 - 2023 softwareQ Inc. All rights reserved.
  *
  * MIT License
  *
@@ -27,22 +27,23 @@
  */
 
 /**
- * \file qasmtools_stab/parser/parser.hpp
+ * \file qasmtools/parser/parser.hpp
  * \brief OpenQASM parsing
  */
 
-#pragma once
+#ifndef QASMTOOLS_PARSER_PARSER_HPP_
+#define QASMTOOLS_PARSER_PARSER_HPP_
 
 #include "../ast/ast.hpp"
 #include "preprocessor.hpp"
 
 #include <list>
 
-namespace qasmtools_stab {
+namespace qasmtools {
 namespace parser {
 
 /**
- * \class qasmtools_stab::parser::ParseError
+ * \class qasmtools::parser::ParseError
  * \brief Exception class for parse errors
  */
 class ParseError : public std::exception {
@@ -53,9 +54,9 @@ class ParseError : public std::exception {
 };
 
 /**
- * \class qasmtools_stab::parser::Parser
+ * \class qasmtools::parser::Parser
  * \brief OpenQASM parser class
- * \see qasmtools_stab::parser::Preprocessor
+ * \see qasmtools::parser::Preprocessor
  */
 class Parser {
     Preprocessor& pp_lexer_; ///< preprocessed, tokenized input stream
@@ -690,7 +691,7 @@ class Parser {
 
     /**
      * \brief Parse an atomic expression
-     * \see qpp:qasmtools_stab::Parser::parse_exp()
+     * \see qpp:qasmtools::Parser::parse_exp()
      *
      * \return Unique pointer to an expression object
      */
@@ -765,7 +766,7 @@ class Parser {
 
     /**
      * \brief Parse a binary operator
-     * \see qpp:qasmtools_stab::Parser::parse_exp()
+     * \see qpp:qasmtools::Parser::parse_exp()
      *
      * \return Binary operator
      */
@@ -802,7 +803,7 @@ class Parser {
 
     /**
      * \brief Parse a unary operator
-     * \see qpp:qasmtools_stab::Parser::parse_exp()
+     * \see qpp:qasmtools::Parser::parse_exp()
      *
      * \return Unary operator
      */
@@ -1052,5 +1053,7 @@ inline ast::ptr<ast::Program> parse_string(const std::string& str,
     return parser.parse();
 }
 
-} // namespace parser
-} // namespace qasmtools_stab
+} /* namespace parser */
+} /* namespace qasmtools */
+
+#endif /* QASMTOOLS_PARSER_PARSER_HPP_ */

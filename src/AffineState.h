@@ -1,10 +1,12 @@
 /**
 \file AffineState.h
 \brief All functions needed for affine state-based simulation described in
-arXiv:2109.08629 \author softwareQ
+arXiv:2109.08629
+\author softwareQ
 */
 
-#pragma once
+#ifndef STAB_AFFINE_STATE_H_
+#define STAB_AFFINE_STATE_H_
 
 #include <Eigen/Dense>
 #include <cassert>
@@ -18,6 +20,9 @@ arXiv:2109.08629 \author softwareQ
 using mat_u_t = Eigen::Matrix<unsigned, Eigen::Dynamic, Eigen::Dynamic>;
 using vec_u_t = Eigen::Vector<unsigned, Eigen::Dynamic>;
 using block_t = Eigen::Block<mat_u_t>;
+
+///< maximum number of qubits allowed in qpp::AffineState::to_ket()
+#define MAX_QUBITS_STATE_VECTOR 16
 
 namespace stab {
 class AffineState {
@@ -84,7 +89,7 @@ class AffineState {
     std::map<std::vector<int>, int> Sample(int nreps) const;
 
     /*!\brief Construct full statevector*/
-    Eigen::VectorXcd to_vec() const;
+    Eigen::VectorXcd to_ket() const;
 
     // Get member variables:
 
@@ -164,4 +169,6 @@ template <typename Derived>
     return A.unaryExpr(m2);
 }
 
-} // namespace stab
+} /* namespace stab */
+
+#endif /* STAB_AFFINE_STATE_H_ */

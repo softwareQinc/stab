@@ -1,7 +1,7 @@
 /*
- * This file is part of qasmtools_stab.
+ * This file is part of qasmtools.
  *
- * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
+ * Copyright (c) 2019 - 2023 softwareQ Inc. All rights reserved.
  *
  * MIT License
  *
@@ -25,11 +25,12 @@
  */
 
 /**
- * \file qasmtools_stab/ast/stmt.hpp
+ * \file qasmtools/ast/stmt.hpp
  * \brief OpenQASM statements
  */
 
-#pragma once
+#ifndef QASMTOOLS_AST_STMT_HPP_
+#define QASMTOOLS_AST_STMT_HPP_
 
 #include "base.hpp"
 #include "expr.hpp"
@@ -38,11 +39,11 @@
 #include <functional>
 #include <vector>
 
-namespace qasmtools_stab {
+namespace qasmtools {
 namespace ast {
 
 /**
- * \class qasmtools_stab::ast::Stmt
+ * \class qasmtools::ast::Stmt
  * \brief Base class for OpenQASM statements
  */
 class Stmt : public ASTNode {
@@ -68,9 +69,9 @@ class Stmt : public ASTNode {
 };
 
 /**
- * \class qasmtools_stab::ast::MeasureStmt
+ * \class qasmtools::ast::MeasureStmt
  * \brief Class for measurement statements
- * \see qasmtools_stab::ast::Stmt
+ * \see qasmtools::ast::Stmt
  */
 class MeasureStmt final : public Stmt {
     VarAccess q_arg_; ///< the quantum bit|register
@@ -137,9 +138,9 @@ class MeasureStmt final : public Stmt {
 };
 
 /**
- * \class qasmtools_stab::ast::ResetStmt
+ * \class qasmtools::ast::ResetStmt
  * \brief Class for reset statements
- * \see qasmtools_stab::ast::Stmt
+ * \see qasmtools::ast::Stmt
  */
 class ResetStmt final : public Stmt {
     VarAccess arg_; ///< the qbit|qreg
@@ -188,9 +189,9 @@ class ResetStmt final : public Stmt {
 };
 
 /**
- * \class qasmtools_stab::ast::IfStmt
+ * \class qasmtools::ast::IfStmt
  * \brief Class for if statements
- * \see qasmtools_stab::ast::Stmt
+ * \see qasmtools::ast::Stmt
  */
 class IfStmt final : public Stmt {
     symbol var_;     ///< classical register name
@@ -258,7 +259,7 @@ class IfStmt final : public Stmt {
 };
 
 /**
- * \class qasmtools_stab::ast::Gate
+ * \class qasmtools::ast::Gate
  * \brief Statement sub-class for gate
  */
 class Gate : public Stmt {
@@ -271,9 +272,9 @@ class Gate : public Stmt {
 };
 
 /**
- * \class qasmtools_stab::ast::UGate
+ * \class qasmtools::ast::UGate
  * \brief Class for U gates
- * \see qasmtools_stab::ast::Gate
+ * \see qasmtools::ast::Gate
  */
 class UGate final : public Gate {
     ptr<Expr> theta_;  ///< theta angle
@@ -377,9 +378,9 @@ class UGate final : public Gate {
 };
 
 /**
- * \class qasmtools_stab::ast::CNOTGate
+ * \class qasmtools::ast::CNOTGate
  * \brief Class for CX gates
- * \see qasmtools_stab::ast::Gate
+ * \see qasmtools::ast::Gate
  */
 class CNOTGate final : public Gate {
     VarAccess ctrl_; ///< control qubit|qreg
@@ -445,9 +446,9 @@ class CNOTGate final : public Gate {
 };
 
 /**
- * \class qasmtools_stab::ast::BarrierGate
+ * \class qasmtools::ast::BarrierGate
  * \brief Class for barrier gates
- * \see qasmtools_stab::ast::Gate
+ * \see qasmtools::ast::Gate
  */
 class BarrierGate final : public Gate {
     std::vector<VarAccess> args_; ///< list of quantum bits|registers
@@ -527,9 +528,9 @@ class BarrierGate final : public Gate {
 };
 
 /**
- * \class qasmtools_stab::ast::DeclaredGate
+ * \class qasmtools::ast::DeclaredGate
  * \brief Class for declared gate applications
- * \see qasmtools_stab::ast::Gate
+ * \see qasmtools::ast::Gate
  */
 class DeclaredGate final : public Gate {
     symbol name_;                   ///< gate identifier
@@ -671,5 +672,7 @@ class DeclaredGate final : public Gate {
     }
 };
 
-} // namespace ast
-} // namespace qasmtools_stab
+} /* namespace ast */
+} /* namespace qasmtools */
+
+#endif /* QASMTOOLS_AST_STMT_HPP_ */

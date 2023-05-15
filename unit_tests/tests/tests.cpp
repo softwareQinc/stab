@@ -11,7 +11,7 @@
 
 using namespace stab;
 
-// anonymous namespace, now this function is local to this translation unit
+// anonymous namespace, now those functions are local to this translation unit
 namespace {
 std::string random_qasm(int nq, bool measure) {
     // Generate random OPENQASM 2.0 string with or without measurements
@@ -170,19 +170,18 @@ TEST(CompareWithQPP, Measurements) {
             assert(psi1.b()(i) == results[i]);
         }
     }
-
     EXPECT_TRUE(success);
 }
 
 TEST(GenerateRandomStates, CheckNorms) {
-    // Test that the AffineState::to_vec() function gives unit vector
+    // Test that the AffineState::to_ket() function gives unit vector
     bool success = true;
     for (auto const& s : circs_without) {
         std::istringstream prog_stream(s);
         AffineState psi =
             stab::qasm_simulator::simulate_and_return(prog_stream);
 
-        Eigen::VectorXcd vec = psi.to_vec();
+        Eigen::VectorXcd vec = psi.to_ket();
         success = (abs(vec.norm() - 1) < 1e-12);
         if (!success) {
             break;
@@ -203,7 +202,6 @@ TEST(RunRandomQASM, PerformMeasurements) {
             break;
         }
     }
-
     EXPECT_TRUE(success);
 }
 
@@ -250,7 +248,7 @@ TEST(CompareWithQPP, NoMeasurements) {
         std::istringstream prog_stream(s);
         AffineState psi1 =
             stab::qasm_simulator::simulate_and_return(prog_stream);
-        Eigen::VectorXcd vec1 = psi1.to_vec();
+        Eigen::VectorXcd vec1 = psi1.to_ket();
         prog_stream.str(s);  // Reset prog stream
         prog_stream.clear(); // Reset EOF bit
 
@@ -277,6 +275,5 @@ TEST(CompareWithQPP, NoMeasurements) {
             break;
         }
     }
-
     EXPECT_TRUE(success);
 }

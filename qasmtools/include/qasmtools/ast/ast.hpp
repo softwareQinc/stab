@@ -1,7 +1,7 @@
 /*
- * This file is part of qasmtools_stab.
+ * This file is part of qasmtools.
  *
- * Copyright (c) 2019 - 2022 softwareQ Inc. All rights reserved.
+ * Copyright (c) 2019 - 2023 softwareQ Inc. All rights reserved.
  *
  * MIT License
  *
@@ -25,23 +25,18 @@
  */
 
 /**
- * \file qasmtools_stab/utils/templates.hpp
- * \brief Helper templates
+ * \file qasmtools/ast/ast.hpp
  */
 
-#pragma once
+#ifndef QASMTOOLS_AST_AST_HPP_
+#define QASMTOOLS_AST_AST_HPP_
 
-namespace qasmtools_stab {
-namespace utils {
-/**
- * \brief Convenience template for variant visitors
- */
-template <class... Ts>
-struct overloaded : Ts... {
-    using Ts::operator()...;
-};
-template <class... Ts>
-overloaded(Ts...) -> overloaded<Ts...>;
+#include "base.hpp"
+#include "decl.hpp"
+#include "expr.hpp"
+#include "program.hpp"
+#include "semantic.hpp"
+#include "stmt.hpp"
+#include "visitor.hpp"
 
-} // namespace utils
-} // namespace qasmtools_stab
+#endif /* QASMTOOLS_AST_AST_HPP_ */
