@@ -136,7 +136,7 @@ TEST(RandomQASM, Generation) {
     EXPECT_TRUE(true);
 }
 
-TEST(CompareWithQPP, Measurements) {
+TEST(CompareWithQpp, Measurements) {
     // Measure with qpp, then check whether measurement outcome is possible with
     // stab
     bool success = true;
@@ -243,9 +243,9 @@ TEST(RunRandomQASM, Identity) {
 
 // TODO check this please, fails once in a blue moon
 // To run multiple times and stop when the test fails, execute (from inside
-// ./build): ./unit_tests/unit_tests --gtest_filter=CompareWithQPP.*
+// ./build): ./unit_tests/unit_tests --gtest_filter=CompareWithQpp.*
 // --gtest_repeat=1000 --gtest_throw_on_failure
-TEST(CompareWithQPP, NoMeasurements) {
+TEST(CompareWithQpp, NoMeasurements) {
     // Run the same circuit with qpp and stab and compare results
     bool success = true;
     for (auto const& s : circs_without) {
