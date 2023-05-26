@@ -6,8 +6,8 @@
 #include "gtest/gtest.h"
 
 #include "AffineState.h"
-#include "random.h"
 #include "qasm/qasm.hpp"
+#include "random.h"
 
 using namespace stab;
 

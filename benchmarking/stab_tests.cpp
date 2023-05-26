@@ -1,8 +1,8 @@
+#include <chrono>
+#include <fstream>
 #include <iostream>
 #include <sstream>
-#include <fstream>
 #include <string>
-#include <chrono>
 #include <vector>
 
 #include "AffineState.h"
@@ -35,7 +35,6 @@ stab::AffineState run_stim(std::fstream& infile, const int& nq) {
     }
     return psi;
 }
-
 
 int main() {
     using namespace stab;

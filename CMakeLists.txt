@@ -4,7 +4,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 enable_testing()
 
 set(CMAKE_CXX_STANDARD 17)
@@ -34,7 +33,7 @@ target_link_libraries(stab-common qasmtools Eigen3::Eigen ${QPP_LINK_DEPS} libqp
 set(MAX_QUBITS_STATE_VECTOR "16" CACHE STRING "Maximum number of qubits allowed in AffineState::to_ket()")
 add_compile_definitions(MAX_QUBITS_STATE_VECTOR=${MAX_QUBITS_STATE_VECTOR})
 
-add_executable(stab main.cpp)
+add_executable(stab stab/main.cpp)
 target_link_libraries(stab stab-common qasmtools ${QPP_LINK_DEPS} libqpp)
 
 add_executable(bench_stab benchmarking/stab_tests.cpp)
