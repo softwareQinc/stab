@@ -14,27 +14,29 @@ using namespace stab;
 // anonymous namespace, now those functions are local to this translation unit
 namespace {
 std::string random_qasm(int nq, bool measure) {
-    // Generate random OPENQASM 2.0 string with or without measurements
+    // We will need to generate a bunch of OPENQASM 2.0 strings, both with and without measurements
     std::vector<std::string> gates = {"x",   "y",  "z",  "s",   "h",
                                       "sdg", "cx", "cz", "swap"};
 
+    // We now build a string called qasm by appending a bunch of random gates
     std::string qasm = "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[" +
                        std::to_string(nq) + "];\ncreg c[" + std::to_string(nq) +
                        "];\n";
 
-    // Now add some gates
+    // Now add n^3 random gates
     for (int gatenumber = 0; gatenumber < pow(nq, 3); ++gatenumber) {
         int randno = random_integer(0, 8);
-        std::string gate = gates[randno];
+        std::string gate = gates[randno]; // Select random number
 
+        // Now we choose random qubits to apply that gate to
         int q1 = random_integer(0, nq - 1);
-        int q2; // Only needed if randno > 5:
+        int q2; // Only needed if randno > 5, since otherwise it's a one-qubit gate:
         if (randno > 5) {
             if (nq == 1) { // Can't have two-qubit gates in this case
                 continue;
             }
             q2 = q1;
-            while (q2 == q1) {
+            while (q2 == q1) { // Hack-y way to choose a distinct random number
                 q2 = random_integer(0, nq - 1);
             }
         }
@@ -57,7 +59,7 @@ std::string random_qasm(int nq, bool measure) {
 }
 
 std::string random_identity(int nq) {
-    // Generate random OPENQASM 2.0 string for an identity circuit. We construct
+    // Generate random OPENQASM 2.0 string for an IDENTITY circuit. We construct
     // this in the form UU^\dagger
     std::vector<std::string> gates = {"x",   "y",  "z",  "s",   "h",
                                       "sdg", "cx", "cz", "swap"};
@@ -104,7 +106,7 @@ std::string random_identity(int nq) {
 
 std::pair<std::vector<std::string>, std::vector<std::string>>
 get_random_circuits(int nmax) {
-    // Get a bunch of circuits, both with an without measurements
+    // Get random circuits with 1, ..., nmax qubits, both with and without measurements
     std::pair<std::vector<std::string>, std::vector<std::string>> all_circs;
     for (int n = 1; n <= nmax; ++n) {
         std::string s = random_qasm(n, false);
@@ -114,9 +116,9 @@ get_random_circuits(int nmax) {
     return all_circs;
 }
 
-// Save time by only generating the random circuits once
+// We will use a bunch of random circuits. We can save time by only generating them once
 const std::pair<std::vector<std::string>, std::vector<std::string>> circs =
-    get_random_circuits(10);
+    get_random_circuits(15);
 const std::vector<std::string> circs_without = circs.first;
 const std::vector<std::string> circs_with = circs.second;
 } // namespace
@@ -137,10 +139,10 @@ TEST(RandomQASM, Generation) {
 }
 
 TEST(CompareWithQpp, Measurements) {
-    // Measure with qpp, then check whether measurement outcome is possible with
-    // stab
+    // Run the circuit with qpp, then check that the measured outcome is possible according to stab
     bool success = true;
     for (auto const& s : circs_without) {
+        std::cout << "Running CompareWithQpp\n";
         std::istringstream prog_stream(s);
         AffineState psi1 =
             stab::qasm_simulator::simulate_and_return(prog_stream);
@@ -227,7 +229,7 @@ TEST(RunRandomQASM, Identity) {
     // |0^n> is encoded by psi.b() being equal to zero, and A and Q having size
     // zero.
     bool success = true;
-    for (int nq = 20; nq <= 50; nq += 10) {
+    for (int nq = 20; nq <= 50; nq += 5) {
         std::string s = random_identity(nq);
         std::istringstream prog_stream(s);
         AffineState psi =

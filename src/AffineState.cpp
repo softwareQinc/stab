@@ -14,7 +14,11 @@
 namespace stab {
 AffineState::AffineState(int n) : n_{n}, phase_{0}, r_{0} {
     pivots_ = std::vector<int>();
-    pivots_.reserve(n + 1);
+    // To avoid always reallocating space, we reserve space for n+1 elements in pivots_
+    pivots_.reserve(n + 1); 
+    // Similarly, we allocate space (n+1)x(n+1) and (n)x(n+1) for Q_ and A_
+    // We can keep track of which rows and columns are "active" by looking at the value of r_
+    // Entries are always reset to 0 when they are not active
     Q_.setZero(n + 1, n + 1);
     A_.setZero(n, n + 1);
     b_.setZero(n);
@@ -35,8 +39,10 @@ int AffineState::n() const { return n_; }
 
 int AffineState::phase() const { return phase_; }
 
+// Only return the top-left block, because rows/cols r+1, ..., n are not active
 mat_u_t AffineState::Q() const { return Q_.block(0, 0, r_, r_); }
 
+// Similarly, only return the active portion of A
 mat_u_t AffineState::A() const { return A_.block(0, 0, n_, r_); }
 
 vec_u_t AffineState::b() const { return b_; }
@@ -48,6 +54,8 @@ int AffineState::r() const { return r_; }
 // Subroutines:
 std::vector<int> AffineState::A_col_nonzeros(int col) {
     // Returns location of ones in column "col" of A
+    // It is useful to calculate this quantity so that we don't have to repeatedly iterate over "0" entries, for which nothing is done
+    // I believe the time savings here is minor, but we may as well do it.
     std::vector<int> ones;
     ones.reserve(n_);
     for (int row = 0; row < n_; ++row) {
@@ -58,8 +66,7 @@ std::vector<int> AffineState::A_col_nonzeros(int col) {
 }
 
 std::vector<int> AffineState::Q_nonzeros() {
-    // Returns location of nonzeros in last col of Q, IGNORING THE DIAGONAL
-    // ENTRY
+    // Returns location of nonzeros in last col of Q, IGNORING THE DIAGONAL ENTRY. We do this so that we don't have to repeatedly iterate over "0" entries, for which nothing is done
     std::vector<int> ones;
     ones.reserve(r_ - 1);
     for (int row = 0; row < r_ - 1; ++row) {
@@ -70,6 +77,7 @@ std::vector<int> AffineState::Q_nonzeros() {
 }
 
 std::vector<int> AffineState::A_row_nonzeros(int row) {
+    // Returns location of nonzeros in a given row of A. We do this so that we don't have to repeatedly iterate over "0" entries, for which nothing is done
     std::vector<int> ones;
     ones.reserve(r_);
     for (int col = 0; col < r_; ++col) {
@@ -80,7 +88,7 @@ std::vector<int> AffineState::A_row_nonzeros(int row) {
 }
 
 void AffineState::ReduceGramRowCol(int c) {
-    int new_qcc = Q_(c, c) % 4;
+    int new_qcc = Q_(c, c) % 4; // Must compute this first because it gets overwritten on the next two lines
     Q_.row(c) = ReduceMod2(Q_.row(c));
     Q_.col(c) = ReduceMod2(Q_.col(c));
     Q_(c, c) = new_qcc;
@@ -94,13 +102,14 @@ void AffineState::ReindexSubtColumn(int k, int c,
     for (int row : col_c_nonzeros)
         A_(row, k) ^= 1;
 
-    // TODO: Optimize Q part? Worst-case complexity won't change
+    // These three lines could potentially be optimized but I do not anticipate a significant speedup, so leaving as is for clarity
     Q_.col(k) += Q_.col(c);
     Q_.row(k) += Q_.row(c);
     ReduceGramRowCol(k);
 }
 
 void AffineState::ReindexSwapColumns(int k) {
+    // Swaps columns k and r-1 of A (r-1 is the last column, due to 0-indexing).
     if (k != r_ - 1) {
         A_.col(k).swap(A_.col(r_ - 1));
         Q_.col(k).swap(Q_.col(r_ - 1));
@@ -110,8 +119,8 @@ void AffineState::ReindexSwapColumns(int k) {
 }
 
 void AffineState::MakePrincipal(int c, int j) {
-    assert(A_(j, c) != 0);
-    std::vector<int> col_c_nonzeros = A_col_nonzeros(c);
+    assert(A_(j, c) != 0); // Impossible in this case.
+    std::vector<int> col_c_nonzeros = A_col_nonzeros(c); // Computing this before the loop saves time
     for (int k = 0; k < r_; ++k) {
         if (A_(j, k) != 0 && k != c) {
             ReindexSubtColumn(k, c, col_c_nonzeros);
@@ -121,8 +130,8 @@ void AffineState::MakePrincipal(int c, int j) {
 }
 
 bool AffineState::ReselectPrincipalRow(int j, int c) {
-    // Performs update if possible and returns flag indicating success or
-    // failure
+    // Performs update if possible and returns flag indicating success or failure
+    // We iterate over each row, each time checking whether it could be selected. As soon as we find a suitable one, we select it and return
     for (int j_star = 0; j_star < n_; ++j_star) {
         if (A_(j_star, c) != 0 && j_star != j) {
             MakePrincipal(c, j_star);
@@ -136,6 +145,7 @@ void AffineState::FixFinalBit(int z) {
     assert(r_ != 0);
 
     // Step 1:
+    // Searching for nonzeros here is probability a negligible speedup. At best it's a constant factor. However in practice we hope that A (and maybe even Q) is sparse, so we will search for nonzeros ahead of time and hope for a (very minor) speedup.
     std::vector<int> a_ones = A_col_nonzeros(r_ - 1);
     std::vector<int> q_ones = Q_nonzeros();
     int u = Q_(r_ - 1, r_ - 1) % 4;
@@ -169,6 +179,7 @@ void AffineState::ZeroColumnElim(int c) {
     ReindexSwapColumns(c);
 
     // Step 2:
+    // Here, precomputing the locations of nonzeros can actually be faster, since in Step 4 we use it in a double for loop
     std::vector<int> q_ones = Q_nonzeros();
     int u = Q_(r_ - 1, r_ - 1) % 4;
 
@@ -204,20 +215,17 @@ void AffineState::ZeroColumnElim(int c) {
         for (int col : q_ones) {
             if (col != ell)
                 ReindexSubtColumn(
-                    col, ell, col_ell_nonzeros); // TODO: Check if ok w/r/t r_
+                    col, ell, col_ell_nonzeros);
         }
 
-        ReindexSwapColumns(ell); // r_-1 because of 0-indexing. This step also
-                                 // produces A^(3) and Q^(3)
-        // At this point, A_ and Q_ should have r_ columns each. Also, since we
-        // removed the zero column in Step 3, the rank of A_ should be r_
+        ReindexSwapColumns(ell);
         FixFinalBit(u / 2);
     }
 }
 
 int AffineState::piv_col(int row_number) {
     // Given a row number, return the index of the column j for in which that
-    // row has a pivot, and return -1 otherwise
+    // row has a pivot, and return -1 otherwise.
     auto it = std::find(pivots_.begin(), pivots_.end(), row_number);
     if (it != pivots_.end())
         return it - pivots_.begin();
@@ -307,6 +315,7 @@ void AffineState::SWAP(int j, int k) {
 }
 
 void AffineState::S_or_SDG(int j, bool dg) {
+    // The procedures for applying S and S^\dagger are basically identical, so we wrap them into a single function
     // dg = true means we apply S^\dagger, dg = false means we apply S
     int sign = 1 - 2 * int(dg); // = +1 for S and -1 for S^\dagger
 

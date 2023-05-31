@@ -1,7 +1,6 @@
 /**
 \file AffineState.h
-\brief All functions needed for affine state-based simulation described in
-arXiv:2109.08629
+\brief All functions needed for the Clifford simulation method described in Niel de Beaudrap and Steven Herbert's paper "Fast Stabiliser Simulation with Quadratic Form Expansions" (https://quantum-journal.org/papers/q-2022-09-15-803/). Most functions are taken directly from the pseudocode described in that paper. We remark that another implementation of this algorithm is given in https://github.com/CQCL/simplex, and that this was the source of the idea to, instead of iterating over an entire row/column, first search for the nonzero entries and then iterate only over them. This saves some time when doing nested for loops, and might give a small speedup for single for loops when A and Q are sparse.
 \author softwareQ
 */
 
@@ -24,7 +23,7 @@ using block_t = Eigen::Block<mat_u_t>;
 namespace stab {
 class AffineState {
   public:
-    /*! \brief Create the state \f$|0^n\rangle\f$ */
+    /*! \brief Initialize a quantum state given by \f$|0^n\rangle\f$ */
     explicit AffineState(int n);
 
     /*! \brief Copy constructor*/
@@ -70,7 +69,7 @@ class AffineState {
      */
     int MeasureZ(int j, bool postselect = false, int postselected_outcome = 0);
 
-    /*! \brief Resets qubit to \f$|0\rangle\f$*/
+    /*! \brief Reset qubit to \f$|0\rangle\f$*/
     void Reset(int j);
 
     /*! \brief Measure all qubits
@@ -97,30 +96,30 @@ class AffineState {
      */
     int phase() const;
 
-    /*! \brief Get \f$ Q \f$ matrix containing phases */
+    /*! \brief Get square matrix \f$ Q \f$ containing phases */
     mat_u_t Q() const;
 
-    /*! \brief Get \f$ A \f$ generating the affine space*/
+    /*! \brief Get the generating matrix \f$ A \f$ of the affine space*/
     mat_u_t A() const;
 
-    /*! \brief Get offset vector \f$ b \f$*/
+    /*! \brief Get shift vector \f$ b \f$*/
     vec_u_t b() const;
 
-    /*! \brief Get the principal index map. Entry \f$ i \f$ corresponds to the
+    /*! \brief Get the so-called "principal index map." Entry \f$ i \f$ corresponds to the
      * value \f$ p(i) \f$.*/
     std::vector<int> pivots() const;
 
-    /*! \brief Get rank \f$ r \f$ of generating matrix*/
+    /*! \brief Get rank \f$ r \f$ of generating matrix \f$ A \f$*/
     int r() const;
 
     /*! \brief Print state in human-readable format*/
     friend std::ostream& operator<<(std::ostream& out, AffineState const& psi);
 
   private:
-    int n_, phase_, r_; // number of qubits
-    mat_u_t Q_, A_;
-    vec_u_t b_;
-    std::vector<int> pivots_;
+    int n_, phase_, r_; // number of qubits, phase, and rank of A
+    mat_u_t Q_, A_;  // Phase matrix and affine space generating matrix
+    vec_u_t b_;  // Affine space shift vector
+    std::vector<int> pivots_;  // "Principal index map"
 
     // Subroutines
     std::vector<int> A_col_nonzeros(int row);
