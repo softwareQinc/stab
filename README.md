@@ -1,5 +1,5 @@
 # stab
-Efficient simulation of Clifford circuits using the method described in Niel de Beaudrap and Steven Herbert's paper "Fast Stabiliser Simulation with Quadratic Form Expansions" (https://quantum-journal.org/papers/q-2022-09-15-803/). Most functions are taken directly from the pseudocode described in that paper.
+Efficient simulation of Clifford circuits using the method described in Niel de Beaudrap and Steven Herbert's paper ["Fast Stabiliser Simulation with Quadratic Form Expansions"](https://quantum-journal.org/papers/q-2022-09-15-803/). Most functions are taken directly from the pseudocode described in that paper.
 
 ## Pre-requisites
 
