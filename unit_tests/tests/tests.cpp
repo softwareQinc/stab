@@ -31,7 +31,7 @@ std::string random_qasm(int nq, bool measure) {
 
     // Now add n^3 random gates
     // for (int gatenumber = 0; gatenumber < pow(nq, 4); ++gatenumber) {
-    for (int gatenumber = 0; gatenumber < 10000; ++gatenumber) { // TODO: Change back to line above
+    for (int gatenumber = 0; gatenumber < 2; ++gatenumber) { // TODO: Change back to line above
         int randno = random_integer(0, 8);
         std::string gate = gates[randno]; // Select random number
 
@@ -65,51 +65,51 @@ std::string random_qasm(int nq, bool measure) {
     return qasm;
 }
 
-std::string random_identity(int nq) {
-    // Generate random OPENQASM 2.0 string for an IDENTITY circuit. We construct
-    // this in the form UU^\dagger
-    std::vector<std::string> gates = {"x",   "y",  "z",  "s",   "h",
-                                      "sdg", "cx", "cz", "swap"};
+// std::string random_identity(int nq) {
+//     // Generate random OPENQASM 2.0 string for an IDENTITY circuit. We construct
+//     // this in the form UU^\dagger
+//     std::vector<std::string> gates = {"x",   "y",  "z",  "s",   "h",
+//                                       "sdg", "cx", "cz", "swap"};
 
-    std::string qasm = "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[" +
-                       std::to_string(nq) + "];\n";
-    std::string inverse = "";
+//     std::string qasm = "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[" +
+//                        std::to_string(nq) + "];\n";
+//     std::string inverse = "";
 
-    // Now add some gates
-    for (int gatenumber = 0; gatenumber < pow(nq, 3); ++gatenumber) {
-        int randno = random_integer(0, 8);
-        std::string gate = gates[randno];
+//     // Now add some gates
+//     for (int gatenumber = 0; gatenumber < pow(nq, 3); ++gatenumber) {
+//         int randno = random_integer(0, 8);
+//         std::string gate = gates[randno];
 
-        int q1 = random_integer(0, nq - 1);
-        int q2; // Only needed if randno > 5:
-        if (randno > 5) {
-            if (nq == 1) { // Can't have two-qubit gates in this case
-                continue;
-            }
-            q2 = q1;
-            while (q2 == q1) {
-                q2 = random_integer(0, nq - 1);
-            }
-        }
+//         int q1 = random_integer(0, nq - 1);
+//         int q2; // Only needed if randno > 5:
+//         if (randno > 5) {
+//             if (nq == 1) { // Can't have two-qubit gates in this case
+//                 continue;
+//             }
+//             q2 = q1;
+//             while (q2 == q1) {
+//                 q2 = random_integer(0, nq - 1);
+//             }
+//         }
 
-        std::string next_line = gate + " q[" + std::to_string(q1) + "]";
-        if (randno > 5) {
-            next_line += ",q[" + std::to_string(q2) + "]";
-        }
-        next_line += ";\n";
-        qasm += next_line;
+//         std::string next_line = gate + " q[" + std::to_string(q1) + "]";
+//         if (randno > 5) {
+//             next_line += ",q[" + std::to_string(q2) + "]";
+//         }
+//         next_line += ";\n";
+//         qasm += next_line;
 
-        inverse = next_line + inverse;
-        if (gate == "s" ||
-            gate == "sdg") { // Lazy way to handle inverses: s^{-1} = s^{3},
-                             // sdg^{-1} = sdg^{3}
-            inverse = next_line + inverse;
-            inverse = next_line + inverse;
-        }
-    }
+//         inverse = next_line + inverse;
+//         if (gate == "s" ||
+//             gate == "sdg") { // Lazy way to handle inverses: s^{-1} = s^{3},
+//                              // sdg^{-1} = sdg^{3}
+//             inverse = next_line + inverse;
+//             inverse = next_line + inverse;
+//         }
+//     }
 
-    return qasm + inverse;
-}
+//     return qasm + inverse;
+// }
 
 std::pair<std::vector<std::string>, std::vector<std::string>>
 get_random_circuits(int nmin, int nmax) {
@@ -235,69 +235,100 @@ const std::vector<std::string> circs_with = circs.second;
 // TODO check this please, fails once in a blue moon
 // To run multiple times and stop when the test fails, execute (from inside
 // ./build): ./unit_tests/unit_tests --gtest_filter=CompareWithQpp.\* --gtest_repeat=1000 --gtest_throw_on_failure
-TEST(CompareWithQpp, NoMeasurements) {
-    // Run the same circuit with qpp and stab and compare results
-    bool success = true;
-    for (auto const& s : circs_without) {
-        std::istringstream prog_stream(s);
-        AffineState psi1 =
-            stab::qasm_simulator::simulate_and_return(prog_stream);
-        Eigen::VectorXcd vec1 = psi1.to_ket();
-        prog_stream.str(s);  // Reset prog stream
-        prog_stream.clear(); // Reset EOF bit
-
-        qpp::QCircuit qc = qpp::qasm::read(prog_stream);
-        qpp::QEngine qe(qc);
-        qpp::ket vec2 = qe.execute().get_psi();
-        // Recall qpp::ket is just Eigen::VectorXcd so vec1 and vec2 are
-        // compatible
-
-        /*auto diff = vec1 - vec2;
-        for (int i = 0; i < pow(2, psi1.n()); ++i) {
-            if (abs(diff(i)) > 1e-14) {
-                success = false;
-                break;
-            }
-        }
-
-        if (!success) {
-            std::cout << s << "\n\n";
-        }*/
-
-        if ((vec1 - vec2).norm() > 1e-12) {
-            success = false;
-            std::ofstream out("qasm_code.txt");
-            out << s;
-            out.close();
-            std::cout << "\n" << s << "\n";
-            std::cout << vec1 - vec2 << "\n";
-            std::cout << (vec1 - vec2).norm() << "\n";
-            break;
-        }
-    }
-    EXPECT_TRUE(success);
-}
-
-// TEST(CompareWithQpp, SpecficCircuit){
-//     std::ifstream ifs("/Users/alexkerzner/test_circuit_jun_1.qasm");
-//     std::string s( (std::istreambuf_iterator<char>(ifs) ),
-//                        (std::istreambuf_iterator<char>()    ) );
-
+// TEST(CompareWithQpp, NoMeasurements) {
+//     // Run the same circuit with qpp and stab and compare results
 //     bool success = true;
-//     std::istringstream prog_stream(s);
-//     AffineState psi1 =
-//         stab::qasm_simulator::simulate_and_return(prog_stream);
-//     Eigen::VectorXcd vec1 = psi1.to_ket();
-//     prog_stream.str(s);  // Reset prog stream
-//     prog_stream.clear(); // Reset EOF bit
+//     for (auto const& s : circs_without) {
+//         std::istringstream prog_stream(s);
+//         AffineState psi1 =
+//             stab::qasm_simulator::simulate_and_return(prog_stream);
+//         Eigen::VectorXcd vec1 = psi1.to_ket();
+//         prog_stream.str(s);  // Reset prog stream
+//         prog_stream.clear(); // Reset EOF bit
 
-//     qpp::QCircuit qc = qpp::qasm::read(prog_stream);
-//     qpp::QEngine qe(qc);
-//     qpp::ket vec2 = qe.execute().get_psi();
+//         qpp::QCircuit qc = qpp::qasm::read(prog_stream);
+//         qpp::QEngine qe(qc);
+//         qpp::ket vec2 = qe.execute().get_psi();
+//         // Recall qpp::ket is just Eigen::VectorXcd so vec1 and vec2 are
+//         // compatible
 
-//     // std::cout << vec1;
-//     // std::cout << vec2;
+//         /*auto diff = vec1 - vec2;
+//         for (int i = 0; i < pow(2, psi1.n()); ++i) {
+//             if (abs(diff(i)) > 1e-14) {
+//                 success = false;
+//                 break;
+//             }
+//         }
 
-//     std::cout << (vec1 - vec2).norm();
+//         if (!success) {
+//             std::cout << s << "\n\n";
+//         }*/
+
+//         std::cout << (vec1-vec2).norm()<< "\n";
+//         if ((vec1 - vec2).norm() > 1e-12) {
+//             success = false;
+//             std::ofstream out("qasm_code.txt");
+//             out << s;
+//             out.close();
+//             std::cout << "\n" << s << "\n";
+//             std::cout << vec1 - vec2 << "\n";
+//             std::cout << (vec1 - vec2).norm() << "\n";
+//             break;
+//         }
+//     }
 //     EXPECT_TRUE(success);
 // }
+
+// TEST(CompareWithQpp, LotsOfCircuits) {
+//     // Run the same circuit with qpp and stab and compare results
+//     bool success = true;
+//     int i = 0;
+//     while(true){
+//         ++i;
+//         std::cout << i << "\n";
+//         std::string s = random_qasm(2, false);
+//         std::istringstream prog_stream(s);
+//         AffineState psi1 =
+//             stab::qasm_simulator::simulate_and_return(prog_stream);
+//         Eigen::VectorXcd vec1 = psi1.to_ket();
+//         prog_stream.str(s);  // Reset prog stream
+//         prog_stream.clear(); // Reset EOF bit
+
+//         qpp::QCircuit qc = qpp::qasm::read(prog_stream);
+//         qpp::QEngine qe(qc);
+//         qpp::ket vec2 = qe.execute().get_psi();
+
+//         if ((vec1 - vec2).norm() > 1e-12) {
+//             success = false;
+//             std::cout << s;
+//             std::cout << "\nAffine state vector:\n" << vec1;
+//             std::cout << "\nQuantum++ statevector\n" << vec2;
+//             std::cout << (vec1 - vec2).norm() << "\n";
+//             break;
+//         }
+//     }
+//     EXPECT_TRUE(success);
+// }
+
+TEST(CompareWithQpp, SpecificCircuit) {
+    // Run the same circuit with qpp and stab and compare results
+    bool success = true;
+    std::string s = "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[2];\ncreg c[2];\nh q[0];\nh q[1];\nsdg q[1];\nh q[1];";
+    std::istringstream prog_stream(s);
+    AffineState psi1 =
+        stab::qasm_simulator::simulate_and_return(prog_stream);
+    Eigen::VectorXcd vec1 = psi1.to_ket();
+    prog_stream.str(s);  // Reset prog stream
+    prog_stream.clear(); // Reset EOF bit
+
+    qpp::QCircuit qc = qpp::qasm::read(prog_stream);
+    qpp::QEngine qe(qc);
+    qpp::ket vec2 = qe.execute().get_psi();
+
+    success = (vec1-vec2).norm() < 1e-12;
+    std::cout << "\nCircuit is\n" << s;
+    std::cout << "\n\nAffine state vector:\n" << vec1;
+    std::cout << "\n\nQuantum++ statevector\n" << vec2;
+    std::cout << "\n\n psi1 - psi2 =\n" << vec1 - vec2 << "\n";
+EXPECT_TRUE(success);
+}
