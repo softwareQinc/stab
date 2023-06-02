@@ -69,4 +69,14 @@ stab::AffineState run_stim(std::fstream& infile, const int& nq) {
 int main() {
     using namespace stab;
 
+    std::ifstream ifs("/Users/alexkerzner/test_circuit_jun_1.qasm");
+    std::string content( (std::istreambuf_iterator<char>(ifs) ),
+                       (std::istreambuf_iterator<char>()    ) );
+    std::cout << content;
+
+    // const std::string fname = "/Users/alexkerzner/test_circuit_jun_1.qasm";
+    
+    // auto psi = stab::qasm_simulator::simulate_and_return(fname);
+    // std::cout << psi;
+    // // stab::qasm_simulator::simulate_file(fname);
 }
