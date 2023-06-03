@@ -1,8 +1,6 @@
 include(GoogleTest)
 set(TARGET_NAME "unit_tests")
 
-find_package(qpp REQUIRED)
-
 #### Link Google Test dynamically if using MSVC
 if (MSVC)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -20,7 +18,10 @@ foreach (FILE ${TEST_FILES})
     target_sources(${TARGET_NAME} PUBLIC ${FILE})
 endforeach ()
 
-target_link_libraries(${TARGET_NAME} gmock stab-common qasmtools ${QPP_LINK_DEPS} libqpp)
+target_link_libraries(${TARGET_NAME} gmock stab-common qasmtools)
+if (${USE_QPP})
+    target_link_libraries(${TARGET_NAME} ${QPP_LINK_DEPS} libqpp)
+endif ()
 
 gtest_discover_tests(${TARGET_NAME})
 

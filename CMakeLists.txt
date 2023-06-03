@@ -8,7 +8,13 @@ enable_testing()
 
 set(CMAKE_CXX_STANDARD 17)
 find_package(Eigen3 3.4 REQUIRED) # because we're using Eigen::seq()
-find_package(qpp REQUIRED)
+
+# Enable Quantum++ support
+option(USE_QPP "Enable Quantum++ support" ON)
+if (${USE_QPP})
+    find_package(qpp REQUIRED)
+    add_compile_definitions(USE_QPP)
+endif ()
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 file(GLOB SOURCES CONFIGURE_DEPENDS "src/*.cpp")
@@ -27,14 +33,21 @@ if (WIN32)
     endif ()
 endif ()
 add_library(stab-common SHARED ${SOURCES} "benchmarking/stab_tests.cpp")
-target_link_libraries(stab-common qasmtools Eigen3::Eigen ${QPP_LINK_DEPS} libqpp)
+
+target_link_libraries(stab-common qasmtools Eigen3::Eigen)
+if (${USE_QPP})
+    target_link_libraries(stab-common ${QPP_LINK_DEPS} libqpp)
+endif ()
 
 #### Maximum number of qubits allowed in qpp::AffineState::to_ket()
 set(MAX_QUBITS_STATE_VECTOR "16" CACHE STRING "Maximum number of qubits allowed in AffineState::to_ket()")
 add_compile_definitions(MAX_QUBITS_STATE_VECTOR=${MAX_QUBITS_STATE_VECTOR})
 
 add_executable(stab stab/main.cpp)
-target_link_libraries(stab stab-common qasmtools ${QPP_LINK_DEPS} libqpp)
+target_link_libraries(stab stab-common qasmtools)
+if (${USE_QPP})
+    target_link_libraries(stab ${QPP_LINK_DEPS} libqpp)
+endif ()
 
 add_executable(bench_stab benchmarking/stab_tests.cpp)
 target_link_libraries(bench_stab stab-common)

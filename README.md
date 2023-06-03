@@ -9,9 +9,22 @@ Efficient simulation of Clifford circuits using the method described in Niel de 
   (`sudo apt install cmake` to install on Ubuntu/Debian Linux, or `brew install cmake` to install on macOS)
 - [Eigen3](https://eigen.tuxfamily.org/index.php) matrix library version 3.4 or later
   (`sudo apt install libeigen3-dev` to install on Ubuntu/Debian Linux, or `brew install eigen` to install on macOS)
+
+## Optional
+
 - [Quantum++](https://github.com/softwareqinc/qpp) quantum computing library
-  (`git clone https://github.com/softwareqinc/qpp && cd qpp && cmake -B build && sudo cmake --build build --target install`
-  to install on all platforms, or `brew install quantum++` to install on macOS)
+
+Execute
+
+```bash
+git clone https://github.com/softwareqinc/qpp 
+cd qpp 
+cmake -B build -DUSE_QPP=ON 
+sudo cmake --build build --target install
+```
+
+to install on all platforms, or `brew install quantum++` to install on macOS, or `sudo pkg install quantum++` to 
+install on FreeBSD. 
 
 ## Setup
 

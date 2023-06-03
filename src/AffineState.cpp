@@ -426,49 +426,51 @@ void AffineState::Reset(int j) {
         X(j);
 }
 
-//Eigen::VectorXcd AffineState::to_ket() const {
-//    // SUPER ugly way to get the statevector. Only needed for unit tests.
-//    if (n_ > 16) {
-//        throw std::logic_error("Maximum number of qubits for statevector "
-//                               "representation is 16");
-//    }
-//    std::complex<double> pi = std::atan(1.0) * 4.0;
-//    std::complex<double> i(0, 1);
+// Eigen::VectorXcd AffineState::to_ket() const {
+//     // SUPER ugly way to get the statevector. Only needed for unit tests.
+//     if (n_ > 16) {
+//         throw std::logic_error("Maximum number of qubits for statevector "
+//                                "representation is 16");
+//     }
+//     std::complex<double> pi = std::atan(1.0) * 4.0;
+//     std::complex<double> i(0, 1);
 //
-//    Eigen::VectorXcd vec; // This will be the state vector
-//    vec.setZero(int(pow(2, n_)));
-//    for (int k = 0; k < pow(2, r_); ++k) {
-//        // For each x \in \{0,1\}^ncols, we now add the corresponding term to
-//        // vec.
+//     Eigen::VectorXcd vec; // This will be the state vector
+//     vec.setZero(int(pow(2, n_)));
+//     for (int k = 0; k < pow(2, r_); ++k) {
+//         // For each x \in \{0,1\}^ncols, we now add the corresponding term to
+//         // vec.
 //
-//        // First, let x = vector whose entries are the binary digits of k:
-//        vec_u_t x(r_);
-//        std::bitset<16> bs(k);         // Get binary string
-//        for (int j = 0; j < r_; ++j) { // Cast binary string to x
-//            x(j) = int(bs[j]);
-//        }
+//         // First, let x = vector whose entries are the binary digits of k:
+//         vec_u_t x(r_);
+//         std::bitset<16> bs(k);         // Get binary string
+//         for (int j = 0; j < r_; ++j) { // Cast binary string to x
+//             x(j) = int(bs[j]);
+//         }
 //
-//        // Figure out which basis state x results in:
-//        vec_u_t ket = ReduceMod2(A_.block(0, 0, n_, r_) * x + b_);
+//         // Figure out which basis state x results in:
+//         vec_u_t ket = ReduceMod2(A_.block(0, 0, n_, r_) * x + b_);
 //
-//        // "ket" is the binary representation of some number basis_state_number.
-//        // We need to add the correct amplitude into vec[basis_state_number].
-//        // Note that AffineState puts the zero-th qubit on the left, but most
-//        // people put it on the right, so we also make this conversion.
+//         // "ket" is the binary representation of some number
+//         basis_state_number.
+//         // We need to add the correct amplitude into vec[basis_state_number].
+//         // Note that AffineState puts the zero-th qubit on the left, but most
+//         // people put it on the right, so we also make this conversion.
 //
-//        int basis_state_number = 0;
-//        for (int j = 0; j < n_; ++j) {
-//            // Conversion
-//            basis_state_number += int(ket(j) * pow(2, n_ - 1 - j));
-//        }
+//         int basis_state_number = 0;
+//         for (int j = 0; j < n_; ++j) {
+//             // Conversion
+//             basis_state_number += int(ket(j) * pow(2, n_ - 1 - j));
+//         }
 //
-//        std::complex<double> phase =
-//            (2 * (x.transpose() * Q_.block(0, 0, r_, r_) * x)[0] + phase_);
-//        vec[basis_state_number] += std::exp(i * pi * phase / 4.0);
-//    }
-//    return vec / pow(2, r_ / 2.0);
-//}
+//         std::complex<double> phase =
+//             (2 * (x.transpose() * Q_.block(0, 0, r_, r_) * x)[0] + phase_);
+//         vec[basis_state_number] += std::exp(i * pi * phase / 4.0);
+//     }
+//     return vec / pow(2, r_ / 2.0);
+// }
 
+#ifdef USE_QPP
 qpp::ket AffineState::to_ket() const {
     using namespace qpp;
 
@@ -515,6 +517,7 @@ qpp::ket AffineState::to_ket() const {
 
     return psi / std::sqrt(D_r);
 }
+#endif
 
 std::ostream& operator<<(std::ostream& out, AffineState const& psi) {
     out << "\nQUADRATIC FORM REPRESENTATION: \n";

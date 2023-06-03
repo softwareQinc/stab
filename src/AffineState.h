@@ -1,7 +1,15 @@
 /**
 \file AffineState.h
-\brief All functions needed for the Clifford simulation method described in Niel de Beaudrap and Steven Herbert's paper "Fast Stabiliser Simulation with Quadratic Form Expansions" (https://quantum-journal.org/papers/q-2022-09-15-803/). Most functions are taken directly from the pseudocode described in that paper. We remark that another implementation of this algorithm is given in https://github.com/CQCL/simplex, and that this was the source of the idea to, instead of iterating over an entire row/column, first search for the nonzero entries and then iterate only over them. This saves some time when doing nested for loops, and might give a small speedup for single for loops when A and Q are sparse.
-\author softwareQ
+\brief All functions needed for the Clifford simulation method described in Niel
+de Beaudrap and Steven Herbert's paper "Fast Stabiliser Simulation with
+Quadratic Form Expansions"
+(https://quantum-journal.org/papers/q-2022-09-15-803/). Most functions are taken
+directly from the pseudocode described in that paper. We remark that another
+implementation of this algorithm is given in https://github.com/CQCL/simplex,
+and that this was the source of the idea to, instead of iterating over an entire
+row/column, first search for the nonzero entries and then iterate only over
+them. This saves some time when doing nested for loops, and might give a small
+speedup for single for loops when A and Q are sparse. \author softwareQ
 */
 
 #ifndef STAB_AFFINE_STATE_H_
@@ -10,11 +18,14 @@
 #include <Eigen/Dense>
 #include <cassert>
 #include <iostream>
+#include <map>
 #include <random>
 #include <unordered_map>
 #include <vector>
 
+#ifdef USE_QPP
 #include <qpp/qpp.h>
+#endif // USE_QPP
 
 using mat_u_t = Eigen::Matrix<unsigned, Eigen::Dynamic, Eigen::Dynamic>;
 using vec_u_t = Eigen::Vector<unsigned, Eigen::Dynamic>;
@@ -84,8 +95,10 @@ class AffineState {
      */
     std::map<std::vector<int>, int> Sample(int nreps) const;
 
-    /*!\brief Construct full statevector*/
+#ifdef USE_QPP
+    /*!\brief Construct full state vector*/
     qpp::ket to_ket() const;
+#endif // USE_QPP
 
     // Get member variables:
 
@@ -105,8 +118,8 @@ class AffineState {
     /*! \brief Get shift vector \f$ b \f$*/
     vec_u_t b() const;
 
-    /*! \brief Get the so-called "principal index map." Entry \f$ i \f$ corresponds to the
-     * value \f$ p(i) \f$.*/
+    /*! \brief Get the so-called "principal index map." Entry \f$ i \f$
+     * corresponds to the value \f$ p(i) \f$.*/
     std::vector<int> pivots() const;
 
     /*! \brief Get rank \f$ r \f$ of generating matrix \f$ A \f$*/
@@ -116,10 +129,10 @@ class AffineState {
     friend std::ostream& operator<<(std::ostream& out, AffineState const& psi);
 
   private:
-    int n_, phase_, r_; // number of qubits, phase, and rank of A
-    mat_u_t Q_, A_;  // Phase matrix and affine space generating matrix
-    vec_u_t b_;  // Affine space shift vector
-    std::vector<int> pivots_;  // "Principal index map"
+    int n_, phase_, r_;       // number of qubits, phase, and rank of A
+    mat_u_t Q_, A_;           // Phase matrix and affine space generating matrix
+    vec_u_t b_;               // Affine space shift vector
+    std::vector<int> pivots_; // "Principal index map"
 
     // Subroutines
     std::vector<int> A_col_nonzeros(int row);

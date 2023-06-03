@@ -1,20 +1,22 @@
+#include <chrono>
+#include <fstream>
 #include <iostream>
 #include <memory>
-#include <sstream>
-#include <fstream>
-#include <string>
 #include <random>
-#include <chrono>
+#include <sstream>
+#include <string>
 #include <vector>
-#include <memory>
 
 #include <Eigen/Dense>
+
+#ifdef USE_QPP
 #include <qpp/qpp.h>
+#endif // USE_QPP
 
 // include own library **always** last
 #include "AffineState.h"
-#include "random.h"
 #include "qasm/qasm.hpp"
+#include "random.h"
 
 stab::AffineState run_stim(std::fstream& infile, const int& nq) {
     // Naive little function to run stim files
@@ -71,7 +73,8 @@ int main() {
 
     // std::cout << "Hello";
 
-    // std::ifstream ifs("/Users/alexkerzner/Documents/GitHub/stab/build/unit_tests/qasm_error_example.qasm");
+    // std::ifstream
+    // ifs("/Users/alexkerzner/Documents/GitHub/stab/build/unit_tests/qasm_error_example.qasm");
     // std::string content( (std::istreambuf_iterator<char>(ifs) ),
     //                    (std::istreambuf_iterator<char>()    ) );
     // std::cout << content;
