@@ -14,11 +14,12 @@
 namespace stab {
 AffineState::AffineState(int n) : n_{n}, phase_{0}, r_{0} {
     pivots_ = std::vector<int>();
-    // To avoid always reallocating space, we reserve space for n+1 elements in pivots_
-    pivots_.reserve(n + 1); 
+    // To avoid always reallocating space, we reserve space for n+1 elements in
+    // pivots_
+    pivots_.reserve(n + 1);
     // Similarly, we allocate space (n+1)x(n+1) and (n)x(n+1) for Q_ and A_
-    // We can keep track of which rows and columns are "active" by looking at the value of r_
-    // Entries are always reset to 0 when they are not active
+    // We can keep track of which rows and columns are "active" by looking at
+    // the value of r_ Entries are always reset to 0 when they are not active
     Q_.setZero(n + 1, n + 1);
     A_.setZero(n, n + 1);
     b_.setZero(n);
@@ -54,8 +55,9 @@ int AffineState::r() const { return r_; }
 // Subroutines:
 std::vector<int> AffineState::A_col_nonzeros(int col) {
     // Returns location of ones in column "col" of A
-    // It is useful to calculate this quantity so that we don't have to repeatedly iterate over "0" entries, for which nothing is done
-    // I believe the time savings here is minor, but we may as well do it.
+    // It is useful to calculate this quantity so that we don't have to
+    // repeatedly iterate over "0" entries, for which nothing is done I believe
+    // the time savings here is minor, but we may as well do it.
     std::vector<int> ones;
     ones.reserve(n_);
     for (int row = 0; row < n_; ++row) {
@@ -66,7 +68,9 @@ std::vector<int> AffineState::A_col_nonzeros(int col) {
 }
 
 std::vector<int> AffineState::Q_nonzeros() {
-    // Returns location of nonzeros in last col of Q, IGNORING THE DIAGONAL ENTRY. We do this so that we don't have to repeatedly iterate over "0" entries, for which nothing is done
+    // Returns location of nonzeros in last col of Q, IGNORING THE DIAGONAL
+    // ENTRY. We do this so that we don't have to repeatedly iterate over "0"
+    // entries, for which nothing is done
     std::vector<int> ones;
     ones.reserve(r_ - 1);
     for (int row = 0; row < r_ - 1; ++row) {
@@ -77,7 +81,9 @@ std::vector<int> AffineState::Q_nonzeros() {
 }
 
 std::vector<int> AffineState::A_row_nonzeros(int row) {
-    // Returns location of nonzeros in a given row of A. We do this so that we don't have to repeatedly iterate over "0" entries, for which nothing is done
+    // Returns location of nonzeros in a given row of A. We do this so that we
+    // don't have to repeatedly iterate over "0" entries, for which nothing is
+    // done
     std::vector<int> ones;
     ones.reserve(r_);
     for (int col = 0; col < r_; ++col) {
@@ -88,7 +94,8 @@ std::vector<int> AffineState::A_row_nonzeros(int row) {
 }
 
 void AffineState::ReduceGramRowCol(int c) {
-    int new_qcc = Q_(c, c) % 4; // Must compute this first because it gets overwritten on the next two lines
+    int new_qcc = Q_(c, c) % 4; // Must compute this first because it gets
+                                // overwritten on the next two lines
     Q_.row(c) = ReduceMod2(Q_.row(c));
     Q_.col(c) = ReduceMod2(Q_.col(c));
     Q_(c, c) = new_qcc;
@@ -102,7 +109,8 @@ void AffineState::ReindexSubtColumn(int k, int c,
     for (int row : col_c_nonzeros)
         A_(row, k) ^= 1;
 
-    // These three lines could potentially be optimized but I do not anticipate a significant speedup, so leaving as is for clarity
+    // These three lines could potentially be optimized but I do not anticipate
+    // a significant speedup, so leaving as is for clarity
     Q_.col(k) += Q_.col(c);
     Q_.row(k) += Q_.row(c);
     ReduceGramRowCol(k);
@@ -120,7 +128,8 @@ void AffineState::ReindexSwapColumns(int k) {
 
 void AffineState::MakePrincipal(int c, int j) {
     assert(A_(j, c) != 0); // Impossible in this case.
-    std::vector<int> col_c_nonzeros = A_col_nonzeros(c); // Computing this before the loop saves time
+    std::vector<int> col_c_nonzeros =
+        A_col_nonzeros(c); // Computing this before the loop saves time
     for (int k = 0; k < r_; ++k) {
         if (A_(j, k) != 0 && k != c) {
             ReindexSubtColumn(k, c, col_c_nonzeros);
@@ -130,8 +139,9 @@ void AffineState::MakePrincipal(int c, int j) {
 }
 
 bool AffineState::ReselectPrincipalRow(int j, int c) {
-    // Performs update if possible and returns flag indicating success or failure
-    // We iterate over each row, each time checking whether it could be selected. As soon as we find a suitable one, we select it and return
+    // Performs update if possible and returns flag indicating success or
+    // failure We iterate over each row, each time checking whether it could be
+    // selected. As soon as we find a suitable one, we select it and return
     for (int j_star = 0; j_star < n_; ++j_star) {
         if (A_(j_star, c) != 0 && j_star != j) {
             MakePrincipal(c, j_star);
@@ -145,7 +155,10 @@ void AffineState::FixFinalBit(int z) {
     assert(r_ != 0);
 
     // Step 1:
-    // Searching for nonzeros here is probability a negligible speedup. At best it's a constant factor. However in practice we hope that A (and maybe even Q) is sparse, so we will search for nonzeros ahead of time and hope for a (very minor) speedup.
+    // Searching for nonzeros here is probability a negligible speedup. At best
+    // it's a constant factor. However in practice we hope that A (and maybe
+    // even Q) is sparse, so we will search for nonzeros ahead of time and hope
+    // for a (very minor) speedup.
     std::vector<int> a_ones = A_col_nonzeros(r_ - 1);
     std::vector<int> q_ones = Q_nonzeros();
     int u = Q_(r_ - 1, r_ - 1) % 4;
@@ -179,7 +192,8 @@ void AffineState::ZeroColumnElim(int c) {
     ReindexSwapColumns(c);
 
     // Step 2:
-    // Here, precomputing the locations of nonzeros can actually be faster, since in Step 4 we use it in a double for loop
+    // Here, precomputing the locations of nonzeros can actually be faster,
+    // since in Step 4 we use it in a double for loop
     std::vector<int> q_ones = Q_nonzeros();
     int u = Q_(r_ - 1, r_ - 1) % 4;
 
@@ -214,8 +228,7 @@ void AffineState::ZeroColumnElim(int c) {
 
         for (int col : q_ones) {
             if (col != ell)
-                ReindexSubtColumn(
-                    col, ell, col_ell_nonzeros);
+                ReindexSubtColumn(col, ell, col_ell_nonzeros);
         }
 
         ReindexSwapColumns(ell);
@@ -315,8 +328,9 @@ void AffineState::SWAP(int j, int k) {
 }
 
 void AffineState::S_or_SDG(int j, bool dg) {
-    // The procedures for applying S and S^\dagger are basically identical, so we wrap them into a single function
-    // dg = true means we apply S^\dagger, dg = false means we apply S
+    // The procedures for applying S and S^\dagger are basically identical, so
+    // we wrap them into a single function dg = true means we apply S^\dagger,
+    // dg = false means we apply S
     int sign = 1 - 2 * int(dg); // = +1 for S and -1 for S^\dagger
 
     std::vector<int> Aj_ones = A_row_nonzeros(j);
@@ -412,6 +426,49 @@ void AffineState::Reset(int j) {
         X(j);
 }
 
+//Eigen::VectorXcd AffineState::to_ket() const {
+//    // SUPER ugly way to get the statevector. Only needed for unit tests.
+//    if (n_ > 16) {
+//        throw std::logic_error("Maximum number of qubits for statevector "
+//                               "representation is 16");
+//    }
+//    std::complex<double> pi = std::atan(1.0) * 4.0;
+//    std::complex<double> i(0, 1);
+//
+//    Eigen::VectorXcd vec; // This will be the state vector
+//    vec.setZero(int(pow(2, n_)));
+//    for (int k = 0; k < pow(2, r_); ++k) {
+//        // For each x \in \{0,1\}^ncols, we now add the corresponding term to
+//        // vec.
+//
+//        // First, let x = vector whose entries are the binary digits of k:
+//        vec_u_t x(r_);
+//        std::bitset<16> bs(k);         // Get binary string
+//        for (int j = 0; j < r_; ++j) { // Cast binary string to x
+//            x(j) = int(bs[j]);
+//        }
+//
+//        // Figure out which basis state x results in:
+//        vec_u_t ket = ReduceMod2(A_.block(0, 0, n_, r_) * x + b_);
+//
+//        // "ket" is the binary representation of some number basis_state_number.
+//        // We need to add the correct amplitude into vec[basis_state_number].
+//        // Note that AffineState puts the zero-th qubit on the left, but most
+//        // people put it on the right, so we also make this conversion.
+//
+//        int basis_state_number = 0;
+//        for (int j = 0; j < n_; ++j) {
+//            // Conversion
+//            basis_state_number += int(ket(j) * pow(2, n_ - 1 - j));
+//        }
+//
+//        std::complex<double> phase =
+//            (2 * (x.transpose() * Q_.block(0, 0, r_, r_) * x)[0] + phase_);
+//        vec[basis_state_number] += std::exp(i * pi * phase / 4.0);
+//    }
+//    return vec / pow(2, r_ / 2.0);
+//}
+
 qpp::ket AffineState::to_ket() const {
     using namespace qpp;
 
@@ -452,7 +509,8 @@ qpp::ket AffineState::to_ket() const {
             (2 * (x.transpose() * Q_.block(0, 0, r_, r_) * x)[0] + phase_);
 
         // Fill in corresponding element of psi
-        psi(basis_state_number) += std::exp(1.0_i * qpp::pi * phase / 4.0);
+        psi(basis_state_number) +=
+            std::exp(1.0_i * qpp::pi * phase / static_cast<qpp::realT>(4.0));
     }
 
     return psi / std::sqrt(D_r);

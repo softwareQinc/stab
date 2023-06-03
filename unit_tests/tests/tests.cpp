@@ -6,15 +6,16 @@
 #include "gtest/gtest.h"
 
 #include "AffineState.h"
-#include "random.h"
 #include "qasm/qasm.hpp"
+#include "random.h"
 
 using namespace stab;
 
-//anonymous namespace, now those functions are local to this translation unit
+// anonymous namespace, now those functions are local to this translation unit
 namespace {
 std::string random_qasm(int nq, bool measure) {
-    // We will need to generate a bunch of OPENQASM 2.0 strings, both with and without measurements
+    // We will need to generate a bunch of OPENQASM 2.0 strings, both with and
+    // without measurements
     std::vector<std::string> gates = {"x",   "y",  "z",  "s",   "h",
                                       "sdg", "cx", "cz", "swap"};
 
@@ -25,19 +26,21 @@ std::string random_qasm(int nq, bool measure) {
 
     // Start with layer of Hadamards to make things interesting:
 
-    for (int i=0;i<nq;++i){
+    for (int i = 0; i < nq; ++i) {
         qasm += "h q[" + std::to_string(i) + "];\n";
     }
 
     // Now add n^3 random gates
     // for (int gatenumber = 0; gatenumber < pow(nq, 4); ++gatenumber) {
-    for (int gatenumber = 0; gatenumber < 2; ++gatenumber) { // TODO: Change back to line above
+    for (int gatenumber = 0; gatenumber < 2;
+         ++gatenumber) { // TODO: Change back to line above
         int randno = random_integer(0, 8);
         std::string gate = gates[randno]; // Select random number
 
         // Now we choose random qubits to apply that gate to
         int q1 = random_integer(0, nq - 1);
-        int q2; // Only needed if randno > 5, since otherwise it's a one-qubit gate:
+        int q2; // Only needed if randno > 5, since otherwise it's a one-qubit
+                // gate:
         if (randno > 5) {
             if (nq == 1) { // Can't have two-qubit gates in this case
                 continue;
@@ -66,7 +69,8 @@ std::string random_qasm(int nq, bool measure) {
 }
 
 // std::string random_identity(int nq) {
-//     // Generate random OPENQASM 2.0 string for an IDENTITY circuit. We construct
+//     // Generate random OPENQASM 2.0 string for an IDENTITY circuit. We
+//     construct
 //     // this in the form UU^\dagger
 //     std::vector<std::string> gates = {"x",   "y",  "z",  "s",   "h",
 //                                       "sdg", "cx", "cz", "swap"};
@@ -113,7 +117,8 @@ std::string random_qasm(int nq, bool measure) {
 
 std::pair<std::vector<std::string>, std::vector<std::string>>
 get_random_circuits(int nmin, int nmax) {
-    // Get random circuits with 1, ..., nmax qubits, both with and without measurements
+    // Get random circuits with 1, ..., nmax qubits, both with and without
+    // measurements
     std::pair<std::vector<std::string>, std::vector<std::string>> all_circs;
     for (int n = nmin; n <= nmax; ++n) { // TODO: Change back to int n = 1; ...
         std::string s = random_qasm(n, false);
@@ -123,7 +128,8 @@ get_random_circuits(int nmin, int nmax) {
     return all_circs;
 }
 
-// We will use a bunch of random circuits. We can save time by only generating them once
+// We will use a bunch of random circuits. We can save time by only generating
+// them once
 const std::pair<std::vector<std::string>, std::vector<std::string>> circs =
     get_random_circuits(4, 5); // TODO: Change back to 10ish
 const std::vector<std::string> circs_without = circs.first;
@@ -146,9 +152,9 @@ const std::vector<std::string> circs_with = circs.second;
 // }
 
 // TEST(CompareWithQpp, Measurements) {
-//     // Run the circuit with qpp, then check that the measured outcome is possible according to stab
-//     bool success = true;
-//     for (auto const& s : circs_without) {
+//     // Run the circuit with qpp, then check that the measured outcome is
+//     possible according to stab bool success = true; for (auto const& s :
+//     circs_without) {
 //         std::istringstream prog_stream(s);
 //         AffineState psi1 =
 //             stab::qasm_simulator::simulate_and_return(prog_stream);
@@ -215,7 +221,8 @@ const std::vector<std::string> circs_with = circs.second;
 
 // TEST(RunRandomQASM, Identity) {
 //     // Make sure that random identity circuits indeed evaluate to |0^n>
-//     // |0^n> is encoded by psi.b() being equal to zero, and A and Q having size
+//     // |0^n> is encoded by psi.b() being equal to zero, and A and Q having
+//     size
 //     // zero.
 //     bool success = true;
 //     for (int nq = 20; nq <= 50; nq += 5) {
@@ -234,8 +241,9 @@ const std::vector<std::string> circs_with = circs.second;
 
 // TODO check this please, fails once in a blue moon
 // To run multiple times and stop when the test fails, execute (from inside
-// ./build): ./unit_tests/unit_tests --gtest_filter=CompareWithQpp.\* --gtest_repeat=1000 --gtest_throw_on_failure
-// TEST(CompareWithQpp, NoMeasurements) {
+// ./build): ./unit_tests/unit_tests --gtest_filter=CompareWithQpp.\*
+// --gtest_repeat=1000 --gtest_throw_on_failure TEST(CompareWithQpp,
+// NoMeasurements) {
 //     // Run the same circuit with qpp and stab and compare results
 //     bool success = true;
 //     for (auto const& s : circs_without) {
@@ -313,22 +321,45 @@ const std::vector<std::string> circs_with = circs.second;
 TEST(CompareWithQpp, SpecificCircuit) {
     // Run the same circuit with qpp and stab and compare results
     bool success = true;
-    std::string s = "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[2];\ncreg c[2];\nh q[0];\nh q[1];\nsdg q[1];\nh q[1];";
+    std::string s = R"(
+        OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[1];
+
+        h q[0];
+        sdg q[0];
+        h q[0];
+    )";
     std::istringstream prog_stream(s);
-    AffineState psi1 =
+    AffineState psi_affine =
         stab::qasm_simulator::simulate_and_return(prog_stream);
-    Eigen::VectorXcd vec1 = psi1.to_ket();
+    qpp::ket vec_affine = psi_affine.to_ket();
     prog_stream.str(s);  // Reset prog stream
     prog_stream.clear(); // Reset EOF bit
 
     qpp::QCircuit qc = qpp::qasm::read(prog_stream);
     qpp::QEngine qe(qc);
-    qpp::ket vec2 = qe.execute().get_psi();
+    qpp::ket vec_qpp = qe.execute().get_psi();
 
-    success = (vec1-vec2).norm() < 1e-12;
+    std::cout << std::setprecision(16);
+    success = (vec_affine - vec_qpp).norm() < 1e-12;
     std::cout << "\nCircuit is\n" << s;
-    std::cout << "\n\nAffine state vector:\n" << vec1;
-    std::cout << "\n\nQuantum++ statevector\n" << vec2;
-    std::cout << "\n\n psi1 - psi2 =\n" << vec1 - vec2 << "\n";
-EXPECT_TRUE(success);
+    std::cout << "\nAffine state vector:\n" << qpp::disp(vec_affine);
+    std::cout << "\n\nQuantum++ state vector\n" << qpp::disp(vec_qpp);
+    std::cout << "\n\npsi_affine - psi_qpp =\n"
+              << qpp::disp(vec_affine - vec_qpp);
+
+    std::cout << "\n\nAbs. vals. of affine\n";
+    for (auto c : vec_affine) {
+        std::cout << std::abs(c) << " ";
+    }
+
+    std::cout << "\n\nAbs. vals. of qpp\n";
+    for (auto c : vec_qpp) {
+        std::cout << std::abs(c) << " ";
+    }
+
+    std::cout << "\n\nsqrt(2)/2 = " << std::sqrt(2) / 2 << "\n\n";
+
+    EXPECT_TRUE(success);
 }
