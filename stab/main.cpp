@@ -76,10 +76,10 @@ int main() {
     psi.H(0);
     psi.CX(0, 1);
     psi.CX(0, 2);
-    std::cout << "Statevector representation:\n" << psi.to_ket();
+    std::cout << "State vector representation:\n" << psi.to_ket();
     int result = psi.MeasureZ(0);
     std::cout << "\nMeasured qubit 0 and observed result " << result;
     psi.MeasureZ(1, true, result);
     psi.MeasureZ(2, true, result);
-    std::cout << "\nAfter postselecting, new state is:\n" << psi.to_ket() << "\n";
+    std::cout << "\nAfter post selecting, new state is:\n" << psi.to_ket() << "\n";
 }
