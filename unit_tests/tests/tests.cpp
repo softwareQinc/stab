@@ -274,7 +274,6 @@ TEST(CompareWithQpp, NoMeasurements) {
             std::cout << s << "\n\n";
         }*/
 
-        std::cout << (vec1 - vec2).norm() << "\n";
         if ((vec1 - vec2).norm() > 1e-12) {
             success = false;
             std::ofstream out("qasm_code.txt");
@@ -289,39 +288,6 @@ TEST(CompareWithQpp, NoMeasurements) {
     EXPECT_TRUE(success);
 }
 #endif // USE_QPP
-
-// #ifdef USE_QPP
-// TEST(CompareWithQpp, LotsOfCircuits) {
-//     // Run the same circuit with qpp and stab and compare results
-//     bool success = true;
-//     int i = 0;
-//     while (true) {
-//         ++i;
-//         std::cout << i << "\n";
-//         std::string s = random_qasm(2, false);
-//         std::istringstream prog_stream(s);
-//         AffineState psi1 =
-//             stab::qasm_simulator::simulate_and_return(prog_stream);
-//         Eigen::VectorXcd vec1 = psi1.to_ket();
-//         prog_stream.str(s);  // Reset prog stream
-//         prog_stream.clear(); // Reset EOF bit
-//
-//         qpp::QCircuit qc = qpp::qasm::read(prog_stream);
-//         qpp::QEngine qe(qc);
-//         qpp::ket vec2 = qe.execute().get_psi();
-//
-//         if ((vec1 - vec2).norm() > 1e-12) {
-//             success = false;
-//             std::cout << s;
-//             std::cout << "\nAffine state vector:\n" << vec1;
-//             std::cout << "\nQuantum++ state vector\n" << vec2;
-//             std::cout << (vec1 - vec2).norm() << "\n";
-//             break;
-//         }
-//     }
-//     EXPECT_TRUE(success);
-// }
-// #endif // USE_QPP
 
 #ifdef USE_QPP
 TEST(CompareWithQpp, SpecificCircuit) {
