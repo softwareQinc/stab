@@ -219,7 +219,7 @@ void AffineState::ZeroColumnElim(int c) {
                 }
             }
         }
-        phase_ = (phase_ - u + 2) % 8;
+        phase_ = (phase_ - u + 2 + 8) % 8;
     } else { // u is even
         assert(q_ones.size() != 0);
 
@@ -508,8 +508,8 @@ qpp::ket AffineState::to_ket() const {
 
         // Compute the phase
         cplx phase =
-            (2 * (x.transpose() * Q_.block(0, 0, r_, r_) * x)[0] + phase_);
-
+            (2 * (x.transpose() * Q_.block(0, 0, r_, r_) * x)[0] + phase_) % 8;
+        std::cout << phase << "\n";
         // Fill in corresponding element of psi
         psi(basis_state_number) +=
             std::exp(1.0_i * qpp::pi * phase / static_cast<qpp::realT>(4.0));

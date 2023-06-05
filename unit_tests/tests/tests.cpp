@@ -346,6 +346,7 @@ TEST(CompareWithQpp, SpecificCircuit) {
     std::istringstream prog_stream(s);
     AffineState psi_affine =
         stab::qasm_simulator::simulate_and_return(prog_stream);
+    std::cout << psi_affine;
     qpp::ket vec_affine = psi_affine.to_ket();
     prog_stream.str(s);  // Reset prog stream
     prog_stream.clear(); // Reset EOF bit
