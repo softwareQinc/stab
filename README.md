@@ -16,7 +16,7 @@ Efficient simulation of Clifford circuits using the method described in Niel de 
 
 Execute
 
-```bash
+```shell
 git clone https://github.com/softwareqinc/qpp 
 cd qpp 
 cmake -B build -DUSE_QPP=ON 
@@ -30,7 +30,7 @@ install on FreeBSD.
 
 From inside the project's root directory, execute
 
-```bash
+```shell
 cmake -B build
 cmake --build build --parallel 8
 ```
@@ -39,12 +39,12 @@ cmake --build build --parallel 8
 
 To build the unit tests, execute
 
-```bash
+```shell
 cmake --build build --target unit_tests --parallel 8
 ```
 
 To run the unit tests, execute
 
-```bash
+```shell
 ctest --test-dir build
 ```
