@@ -4,7 +4,7 @@
 
 Efficient simulation of Clifford circuits using the method described in Niel de Beaudrap and Steven Herbert's
 paper ["Fast Stabiliser Simulation with Quadratic Form Expansions"](https://quantum-journal.org/papers/q-2022-09-15-803/).
-Most functions are taken directly from the pseudocode described in that paper.
+Most functions are implemented from the pseudocode described in the paper.
 
 ---
 
@@ -43,6 +43,11 @@ cmake --build build --parallel 8
 ```
 
 The flag `USE_QPP` in the square bracket is optional, set to `OFF` by default.
+
+Note that on Windows you may need to set the `EIGEN3_INSTALL_DIR` environment variable to point to your Eigen
+installation, and add the path to `stab-common.dll` (usually `.\build\Debug` or `.\build\Release`) to your `PATH`
+environmnt variable. Check out the GitHub actions file [.github/workflows/cmake.yml](.github/workflows/cmake.yml) for
+more details and a full **stab** setup on Windows.
 
 ---
 
