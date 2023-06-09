@@ -1,0 +1,78 @@
+name: GitHub actions
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+env:
+  BUILD_TYPE: Debug
+  EIGEN3_WIN_INSTALL_DIR: C:/ProgramData/chocolatey/lib/eigen/include
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Eigen3
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            choco install eigen
+          elif [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt-get install -y libeigen3-dev
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            brew install eigen
+          else
+            echo "$RUNNER_OS not supported"
+            exit 1
+          fi
+
+      - name: Configure stab POSIX
+        if: matrix.os != 'windows-latest'
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DUSE_QPP=OFF
+
+      - name: Configure stab Windows
+        shell: cmd
+        if: matrix.os == 'windows-latest'
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DEIGEN3_INSTALL_DIR=${{env.EIGEN3_WIN_INSTALL_DIR}} -DUSE_QPP=OFF
+
+      - name: Build stab
+        run: cmake --build build --parallel 4
+
+      - name: Run stab POSIX
+        if: matrix.os != 'windows-latest'
+        run: ./build/stab
+
+      - name: Run stab Windows
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: .\build\${{env.BUILD_TYPE}}\stab.exe
+
+      - name: Build unit tests POSIX
+        if: matrix.os != 'windows-latest'
+        run: cmake --build build --target unit_tests --parallel 4
+
+      - name: Build unit tests Windows
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: |
+          set "PATH=%PATH%;${{github.workspace}}\build\${{env.BUILD_TYPE}}"
+          cmake --build build --target unit_tests --parallel 4
+
+      - name: Run unit tests POSIX
+        if: matrix.os != 'windows-latest'
+        run: ctest --test-dir build
+
+      - name: Run unit tests Windows
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: |
+          set "PATH=%PATH%;${{github.workspace}}\build\${{env.BUILD_TYPE}}"
+          ctest --test-dir build

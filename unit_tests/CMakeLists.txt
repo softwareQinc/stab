@@ -24,11 +24,3 @@ if (${USE_QPP})
 endif ()
 
 gtest_discover_tests(${TARGET_NAME})
-
-#### If MSVC, copy the stab-common.dll into the unit_tests folder
-if (MSVC)
-    add_custom_command(TARGET unit_tests POST_BUILD        # execute after the linking stage
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake -E copy_if_different..."
-            "${PROJECT_BINARY_DIR}/stab-common.dll"        # <--this is in-file
-            $<TARGET_FILE_DIR:unit_tests>)                 # <--this is out-file path
-endif ()

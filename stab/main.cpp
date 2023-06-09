@@ -76,10 +76,19 @@ int main() {
     psi.H(0);
     psi.CX(0, 1);
     psi.CX(0, 2);
-    std::cout << "State vector representation:\n" << psi.to_ket();
+
+#ifdef USE_QPP
+    std::cout << "State vector representation:\n"
+              << qpp::disp(psi.to_ket()) << '\n';
+#endif // USE_QPP
+
     int result = psi.MeasureZ(0);
-    std::cout << "\nMeasured qubit 0 and observed result " << result;
+    std::cout << "Measured qubit 0 and observed result " << result << '\n';
     psi.MeasureZ(1, true, result);
     psi.MeasureZ(2, true, result);
-    std::cout << "\nAfter post selecting, new state is:\n" << psi.to_ket() << "\n";
+
+#ifdef USE_QPP
+    std::cout << "After post selecting, new state is:\n"
+              << qpp::disp(psi.to_ket()) << "\n";
+#endif
 }

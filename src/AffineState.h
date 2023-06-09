@@ -165,17 +165,9 @@ template <typename Derived>
 using expr_t =
     typename std::decay<decltype(std::declval<Derived>().eval())>::type;
 
-// Small helper functions
-auto mod_2 = []() {
-    // returns a unary lambda
-    return [](unsigned x) { return x & 1; };
-};
-
-auto inline m2 = mod_2();
-
 template <typename Derived>
 [[nodiscard]] expr_t<Derived> ReduceMod2(const Eigen::MatrixBase<Derived>& A) {
-    return A.unaryExpr(m2);
+    return A.unaryExpr([](unsigned x) { return x & 1; });
 }
 
 } /* namespace stab */

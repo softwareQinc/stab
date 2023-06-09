@@ -1,6 +1,7 @@
 #ifndef STAB_RANDOM_H_
 #define STAB_RANDOM_H_
 
+#include <stdexcept>
 #include <random>
 
 namespace stab {
