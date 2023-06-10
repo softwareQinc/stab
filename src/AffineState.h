@@ -9,7 +9,8 @@ implementation of this algorithm is given in https://github.com/CQCL/simplex,
 and that this was the source of the idea to, instead of iterating over an entire
 row/column, first search for the nonzero entries and then iterate only over
 them. This saves some time when doing nested for loops, and might give a small
-speedup for single for loops when A and Q are sparse. \author softwareQ
+speedup for single for loops when A and Q are sparse.
+\author softwareQ
 */
 
 #ifndef STAB_AFFINE_STATE_H_
@@ -28,7 +29,7 @@ speedup for single for loops when A and Q are sparse. \author softwareQ
 #endif // USE_QPP
 
 using mat_u_t = Eigen::Matrix<unsigned, Eigen::Dynamic, Eigen::Dynamic>;
-using vec_u_t = Eigen::Vector<unsigned, Eigen::Dynamic>;
+using vec_u_t = Eigen::Matrix<unsigned, Eigen::Dynamic, 1>;
 using block_t = Eigen::Block<mat_u_t>;
 
 namespace stab {

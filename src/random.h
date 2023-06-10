@@ -1,8 +1,8 @@
 #ifndef STAB_RANDOM_H_
 #define STAB_RANDOM_H_
 
-#include <stdexcept>
 #include <random>
+#include <stdexcept>
 
 namespace stab {
 std::mt19937& get_prng_engine();

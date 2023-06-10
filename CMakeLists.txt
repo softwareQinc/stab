@@ -35,7 +35,7 @@ elseif (LOCATION_SET_VIA_ENV)
     endif ()
     #### Try to find the location automatically
 else ()
-    find_package(Eigen3 3.4 QUIET NO_MODULE)
+    find_package(Eigen3 3.0 QUIET NO_MODULE)
     if (NOT TARGET Eigen3::Eigen) # did not find Eigen3 automatically
         message(FATAL_ERROR "Eigen3 not detected! Please point EIGEN3_INSTALL_DIR to your Eigen3 location when building with CMake, for example
     cmake --build build -DEIGEN3_INSTALL_DIR=$HOME/eigen3
