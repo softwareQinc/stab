@@ -32,7 +32,8 @@ std::string random_qasm(int nq, bool measure) {
     }
 
     // Now add n^3 random gates
-    for (int gatenumber = 0; gatenumber < pow(nq, 3); ++gatenumber) {
+    int ngates = std::pow(nq,3);
+    for (int gatenumber = 0; gatenumber < ngates; ++gatenumber) {
         int randno = random_integer(0, 8);
         std::string gate = gates[randno]; // Select random number
 
@@ -78,7 +79,8 @@ std::string random_identity(int nq) {
     std::string inverse{};
 
     // Now add some gates
-    for (int gatenumber = 0; gatenumber < pow(nq, 3); ++gatenumber) {
+    int ngates = std::pow(nq,3);
+    for (int gatenumber = 0; gatenumber < ngates; ++gatenumber) {
         int randno = random_integer(0, 8);
         std::string gate = gates[randno];
 
@@ -263,7 +265,8 @@ TEST(CompareWithQpp, NoMeasurements) {
         // compatible
 
         /*auto diff = vec1 - vec2;
-        for (int i = 0; i < pow(2, psi1.n()); ++i) {
+        int N = std::pow(2, psi1.n());
+        for (int i = 0; i < N; ++i) {
             if (abs(diff(i)) > 1e-14) {
                 success = false;
                 break;
