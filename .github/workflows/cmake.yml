@@ -63,7 +63,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: cmd
         run: |
-          set "PATH=%PATH%;${{github.workspace}}\build\${{env.BUILD_TYPE}}"
+          set PATH=%PATH%;${{github.workspace}}\build\${{env.BUILD_TYPE}}
           cmake --build build --target unit_tests --parallel 4
 
       - name: Run unit tests POSIX
@@ -74,5 +74,5 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: cmd
         run: |
-          set "PATH=%PATH%;${{github.workspace}}\build\${{env.BUILD_TYPE}}"
+          set PATH=%PATH%;${{github.workspace}}\build\${{env.BUILD_TYPE}}
           ctest --test-dir build
