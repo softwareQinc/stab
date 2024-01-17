@@ -61,8 +61,9 @@ std::vector<int> AffineState::A_col_nonzeros(int col) {
     std::vector<int> ones;
     ones.reserve(n_);
     for (int row = 0; row < n_; ++row) {
-        if (A_(row, col) == 1)
+        if (A_(row, col) == 1) {
             ones.push_back(row);
+        }
     }
     return ones;
 }
@@ -74,8 +75,9 @@ std::vector<int> AffineState::Q_nonzeros() {
     std::vector<int> ones;
     ones.reserve(r_ - 1);
     for (int row = 0; row < r_ - 1; ++row) {
-        if (Q_(row, r_ - 1) != 0)
+        if (Q_(row, r_ - 1) != 0) {
             ones.push_back(row);
+        }
     }
     return ones;
 }
@@ -87,8 +89,9 @@ std::vector<int> AffineState::A_row_nonzeros(int row) {
     std::vector<int> ones;
     ones.reserve(r_);
     for (int col = 0; col < r_; ++col) {
-        if (A_(row, col) != 0)
+        if (A_(row, col) != 0) {
             ones.push_back(col);
+        }
     }
     return ones;
 }
@@ -106,8 +109,9 @@ void AffineState::ReindexSubtColumn(int k, int c,
     // Applies the update Column k of A <--- Column k - Column c
     assert(c != k);
 
-    for (int row : col_c_nonzeros)
+    for (int row : col_c_nonzeros) {
         A_(row, k) ^= 1;
+    }
 
     // These three lines could potentially be optimized but I do not anticipate
     // a significant speedup, so leaving as is for clarity
@@ -164,8 +168,9 @@ void AffineState::FixFinalBit(int z) {
     int u = Q_(r_ - 1, r_ - 1) % 4;
 
     // Step 2:
-    for (int row : a_ones)
+    for (int row : a_ones) {
         A_(row, r_ - 1) = 0;
+    }
 
     for (int rowcol : q_ones) {
         Q_(rowcol, r_ - 1) = 0;
@@ -175,10 +180,12 @@ void AffineState::FixFinalBit(int z) {
 
     // Step 3:
     if (z == 1) {
-        for (int i : q_ones)
+        for (int i : q_ones) {
             Q_(i, i) = (Q_(i, i) + 2) % 4;
-        for (int row : a_ones)
+        }
+        for (int row : a_ones) {
             b_(row) ^= 1;
+        }
         phase_ = (phase_ + 2 * u) % 8;
     }
 
@@ -227,8 +234,9 @@ void AffineState::ZeroColumnElim(int c) {
         std::vector<int> col_ell_nonzeros = A_col_nonzeros(ell);
 
         for (int col : q_ones) {
-            if (col != ell)
+            if (col != ell) {
                 ReindexSubtColumn(col, ell, col_ell_nonzeros);
+            }
         }
 
         ReindexSwapColumns(ell);
@@ -240,10 +248,11 @@ int AffineState::piv_col(int row_number) {
     // Given a row number, return the index of the column j for in which that
     // row has a pivot, and return -1 otherwise.
     auto it = std::find(pivots_.begin(), pivots_.end(), row_number);
-    if (it != pivots_.end())
+    if (it != pivots_.end()) {
         return it - pivots_.begin();
-    else
+    } else {
         return -1;
+    }
 }
 
 // GATES:
@@ -280,8 +289,9 @@ void AffineState::H(int j) {
     b_(j) = 0;
 
     // Step 7:
-    if (c > -1)
+    if (c > -1) {
         ZeroColumnElim(c);
+    }
 }
 
 void AffineState::CZ(int j, int k) {
@@ -300,19 +310,22 @@ void AffineState::CZ(int j, int k) {
         Q_(jj, jj) = (Q_(jj, jj) + 2 * b_(k)) % 4;
     }
 
-    for (int kk : Ak_ones)
+    for (int kk : Ak_ones) {
         Q_(kk, kk) = (Q_(kk, kk) + 2 * b_(j)) % 4;
+    }
 
     phase_ = (phase_ + 4 * b_(j) * b_(k)) % 8;
 }
 
 void AffineState::CX(int j, int k) {
     int c = piv_col(k);
-    for (int col : A_row_nonzeros(j))
+    for (int col : A_row_nonzeros(j)) {
         A_(k, col) ^= 1;
+    }
     b_(k) ^= b_(j);
-    if (c != -1)
+    if (c != -1) {
         ReselectPrincipalRow(-1, c);
+    }
 }
 
 void AffineState::SWAP(int j, int k) {
@@ -321,10 +334,12 @@ void AffineState::SWAP(int j, int k) {
 
     auto it_j = std::find(pivots_.begin(), pivots_.end(), j);
     auto it_k = std::find(pivots_.begin(), pivots_.end(), k);
-    if (it_j != pivots_.end())
+    if (it_j != pivots_.end()) {
         *it_j = k;
-    if (it_k != pivots_.end())
+    }
+    if (it_k != pivots_.end()) {
         *it_k = j;
+    }
 }
 
 void AffineState::S_or_SDG(int j, bool dg) {
@@ -400,14 +415,16 @@ int AffineState::MeasureZ(int j, bool postselect, int postselected_outcome) {
 
 std::vector<int> AffineState::MeasureAll() const {
     vec_u_t x(r_);
-    for (int i = 0; i < r_; ++i)
+    for (int i = 0; i < r_; ++i) {
         x(i) = random_bit();
+    }
 
     vec_u_t tmp = ReduceMod2(A_.block(0, 0, n_, r_) * x + b_);
 
     std::vector<int> result(n_);
-    for (int i = 0; i < n_; ++i)
+    for (int i = 0; i < n_; ++i) {
         result[i] = tmp(i);
+    }
 
     return result;
 }
@@ -422,8 +439,9 @@ std::map<std::vector<int>, int> AffineState::Sample(int nreps) const {
 
 void AffineState::Reset(int j) {
     int tmp = MeasureZ(j);
-    if (tmp == 1)
+    if (tmp == 1) {
         X(j);
+    }
 }
 
 // Eigen::VectorXcd AffineState::to_ket() const {

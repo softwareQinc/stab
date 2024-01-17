@@ -32,7 +32,7 @@ std::string random_qasm(int nq, bool measure) {
     }
 
     // Now add n^3 random gates
-    int ngates = std::pow(nq,3);
+    int ngates = std::pow(nq, 3);
     for (int gatenumber = 0; gatenumber < ngates; ++gatenumber) {
         int randno = random_integer(0, 8);
         std::string gate = gates[randno]; // Select random number
@@ -79,7 +79,7 @@ std::string random_identity(int nq) {
     std::string inverse{};
 
     // Now add some gates
-    int ngates = std::pow(nq,3);
+    int ngates = std::pow(nq, 3);
     for (int gatenumber = 0; gatenumber < ngates; ++gatenumber) {
         int randno = random_integer(0, 8);
         std::string gate = gates[randno];
@@ -131,7 +131,7 @@ get_random_circuits(int nmin, int nmax) {
 // We will use a bunch of random circuits. We can save time by only generating
 // them once
 const std::pair<std::vector<std::string>, std::vector<std::string>> circs =
-    get_random_circuits(1, 15); 
+    get_random_circuits(1, 15);
 const std::vector<std::string> circs_without = circs.first;
 const std::vector<std::string> circs_with = circs.second;
 } // namespace
